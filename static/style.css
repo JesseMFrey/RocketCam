@@ -1,0 +1,130 @@
+body {
+    color: #C0C0C0;
+    background-color: #080808;
+
+}
+
+#content {
+    /*max-width : 5in;*/
+    background-color: #383838;
+}
+
+#header img {
+    max-width : 100%;
+    height : 100%;
+    display: block;
+    margin: auto;
+}
+
+.left, .right, .center {
+    float: left;
+    width: 33%;
+    color: white;
+    padding: 10px;
+    height: 500px;
+    text-align: center;
+}
+
+
+/* Use a media query to add a breakpoint at 800px: */
+@media screen and (max-width: 800px) {
+  .left, .main, .right {
+    width: 100%; /* The width is 100%, when the viewport is 800px or smaller */
+  }
+}
+
+.column {
+    float: left;
+}
+
+.cmd {
+    float : left;
+    clear : both;
+}
+
+.menu {
+    width : 100%;
+    float : right;
+    clear : left;
+}
+
+.left, .right {
+    width: 25%;
+    max-width : 2in;
+    background-color : #181818;
+}
+
+.middle {
+    width: 50%;
+    max-width : 6in;
+}
+
+.container:after {
+    clear: both;
+}
+
+.description {
+    text-align: left;
+}
+
+table.data {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+tbody>tr.info>:nth-child(1){
+    text-align:right;
+}
+
+.data tbody>tr.info>:nth-child(3){
+    text-align:left;
+}
+
+.data tbody>tr.info>:nth-child(2){
+    width: 0.5em;
+    border: 0px;
+}
+
+
+td.heading {
+    text-align: center;
+}
+/*
+#actions {
+    width: 150px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000; 
+    background: #191818;
+    overflow-y: auto;
+}
+*/
+
+.panic {
+    color: #F6FF00;
+    font-weight: bold;
+}
+
+/*Set link colors*/
+
+/* unvisited link */
+a:link {
+  color: #04FF00;
+}
+
+/* visited link */
+a:visited {
+  color: #F6FF00;
+}
+
+/* mouse over link */
+a:hover {
+  color: #3F52FD;
+}
+
+/* selected link */
+a:active {
+  color: #ea80fc;
+} 
