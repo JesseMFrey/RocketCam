@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A webpage to controle a LED rocket">
+    <title>RocketCamra Control</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+    {% from picamera import PiCamera %}
+</head>
+<body>
+    <div>
+        <h1>Camera Controls</h1>
+
+        <form action="/index.html" method="POST">
+            <p>
+                <label for="speed">Shutter speed : </label>
+                <input type="number" id="speed" value="6000000" min="0" max="30000000">
+            </p>
+            <p>
+                <label for="iso">ISO : </label>
+                <select name="iso" id="iso" title="ISO speed">
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                    <option value="320">320</option>
+                    <option value="400">400</option>
+                    <option value="500">500</option>
+                    <option value="640">640</option>
+                    <option value="800" selected=true>800</option>
+                </select>
+            </p>
+            <p>
+                <label for="mode">Camera mode : </label>
+                <select name="mode" id="mode" title="Camera mode">
+                    {% for k, v in PiCamera.EXPOSURE_MODES.items() %}
+                    <option value="{{v}}">{{k}}</option>
+                    {% end %}
+                </select>
+            </p>
+            <p>
+                <label for="rate">Frame rate : </label>
+                <input type="number" id="rate" value="6" min="0" max="{{PiCamera.MAX_FRAMERATE}}">
+            </p>
+            <p>
+                <label for="res">Image resolution : </label>
+                <select name="resolution" id="res" title="Image resolution">
+                    <option value="{{PiCamera.MAX_RESOLUTION}}">max ({{PiCamera.MAX_RESOLUTION}})</option>
+                </select>
+            </p>
+            <p>
+                <input type="submit" name="action" value="Capture" title="Take a picture with the saved settings">
+                <input type="submit" name="action" value="save" title="Save and apply settins.">
+        </form>
+    </div>
+</body>
+

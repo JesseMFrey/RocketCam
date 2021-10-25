@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+import argparse
+import fractions
+import logging
+import os.path
+import picamera
+import time
+import tornado.escape
+import tornado.ioloop
+import tornado.web
+
+class CameraCfg:
+    def __init__(self):
+        print('Initializing camera')
+        self.camera = picamera.PiCamera(
+                    framerate=fractions.Fraction(1,6),
+                    sensor_mode=3
+                    )
+        self.camera.shutter_speed = 6000000
+        self.camera.iso = 800
+        time.sleep(30)
+        print('Camera ready!')
+
+    def take_pict(slef):
+        pass
+
+class MainHandler(tornado.web.RequestHandler):
+    def initialize(self,cam):
+        self.cam = cam
+
+    def get(self):
+
+        self.render('index.html')
+
+class Application(tornado.web.Application):
+    def __init__(self, cam, *args, **kwargs):
+        handlers = [(r"/index", MainHandler,{'cam':cam}),
+                    (r"/index\.html", MainHandler,{'cam':cam}),
+                    (r"/home\.html", MainHandler,{'cam':cam}),
+                    (r"/home", MainHandler,{'cam':cam}),
+                    (r"/", MainHandler,{'cam':cam}),
+                ]
+        super(Application, self).__init__(handlers, *args, **kwargs)
+
+def start_application():
+    parser = argparse.ArgumentParser(description='Web application for camera control')
+    parser.add_argument('-p','--port',default=8888,type=int,help='port to listen to')
+    parser.add_argument('--debug',action='store_true',help='print additional debug info')
+
+    args = parser.parse_args()
+
+    cam = CameraCfg()
+
+    app = Application(
+                        cam,
+                        template_path=os.path.join(os.path.dirname(__file__), 'templates'),
+                        static_path=os.path.join(os.path.dirname(__file__), 'static'),
+                        debug = args.debug,
+                     )
+    app.listen(args.port)
+    print(f'Starting server on port {args.port}')
+    tornado.ioloop.IOLoop.current().start()
+
+if __name__ == "__main__":
+    start_application()
+
