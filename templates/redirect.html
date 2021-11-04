@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Waiting page while picture is taken">
+    <title>Taking Picture Please Wait</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+</head>
+<body>
+    <p>You will be redirected in <span id="counter">{{time}}</span> second(s).</p>
+    <script type="text/javascript">
+        function countdown() {
+            var i = document.getElementById('counter');
+            if (parseInt(i.innerHTML)<=0) {
+                        location.href = 'image.html?img={{picture}}';
+            }
+            if (parseInt(i.innerHTML)!=0)
+            {
+                i.innerHTML = parseInt(i.innerHTML)-1;
+            }
+        }
+        setInterval(function(){ countdown(); },{{time*100}});
+    </script>
+</body>

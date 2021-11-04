@@ -25,6 +25,10 @@ body {
     text-align: center;
 }
 
+.preview {
+    max-width: 100%;
+    height: auto;
+}
 
 /* Use a media query to add a breakpoint at 800px: */
 @media screen and (max-width: 800px) {

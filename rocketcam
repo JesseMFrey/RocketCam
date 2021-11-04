@@ -3,6 +3,7 @@
 import argparse
 import fractions
 import logging
+import math
 import os.path
 import picamera
 import time
@@ -11,6 +12,13 @@ import tornado.ioloop
 import tornado.web
 
 iso_list = (100, 200, 320, 400, 500, 640, 800)
+
+stat_dir = os.path.join(os.path.dirname(__file__), 'static')
+img_dir = os.path.join(os.path.dirname(__file__), 'pictures')
+img_url = 'pictures/'
+#img_dir  = os.path.join(os.path.expanduser('~'),'Pictures')
+#name for image files
+name_fmt = 'IMG_{num}'
 
 class CameraCfg:
     def __init__(self):
@@ -21,11 +29,55 @@ class CameraCfg:
                     )
         self.camera.shutter_speed = 6000000
         self.camera.iso = 800
-        time.sleep(30)
-        print('Camera ready!')
+        #time.sleep(30)
+        #print('Camera ready!')
 
-    def take_pict(slef):
+    def take_picture(self, name):
+        #TESTING : print name
+        print(f'Capturing picture {name}')
+        #capture picture
+        #TODO : add choice of format
+        self.camera.capture(name,format='jpeg')
+            
+def num2name(num, ext='.jpg'):
+    name = name_fmt.format(num=num) + ext
+    return os.path.join(img_dir, name)
+
+
+def get_img_urls(num):
+    name = name_fmt.format(num=num) + '.jpg'
+    path = os.path.join(img_dir, name)
+    if os.path.exists(path):
+        jpg_url = '/' + img_url + name
+        #TODO : check if jpg exists and create it if not
+        return (jpg_url, jpg_url)
+    else:
+        #does not exist, return None
+        return None
+
+class ImageDispHandler(tornado.web.RequestHandler):
+    def initialize(self):
         pass
+
+    def get(self):
+        img_num = self.get_argument('img', default=None)
+
+        if img_num is None:
+            self.redirect(r'/gallery.html',True)
+        else:
+            url = get_img_urls(int(img_num))
+
+            if url:
+                jpg_name, raw_name = url
+
+                jpg_url = jpg_name
+
+                print(f'Image path name : {jpg_url}')
+
+                self.render('image.html',img_url=jpg_url)
+            else:
+                #TODO : give some sort of error here?
+                self.redirect(r'/gallery.html',True)
 
 class MainHandler(tornado.web.RequestHandler):
     def initialize(self,cam):
@@ -34,14 +86,27 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         frame = self.cam.camera.framerate
 
+        #divide numerator into denominator
+        new_d, rem = divmod(frame.denominator, frame.numerator)
+
+        #check if remainder is small
+        if rem < frame.denominator *1e-3:
+            #make new fraction
+            frame = fractions.Fraction(1, new_d)
+
+        #get shutter speed
+        shutter = round(self.cam.camera.shutter_speed*1e-6, 6)
+
         self.render('index.html',
                         iso=self.cam.camera.iso,
                         isos=iso_list,
                         mode=self.cam.camera.sensor_mode,
+                        shutter=shutter,
                         resolution=self.cam.camera.resolution,
-                        shutter=self.cam.camera.shutter_speed,
                         frame_d=frame.denominator,
                         frame_n=frame.numerator,
+                        awb_mode=self.cam.camera.awb_mode,
+                        awb_gain=self.cam.camera.awb_gains,
                    )
 
     def post(self):
@@ -52,14 +117,27 @@ class MainHandler(tornado.web.RequestHandler):
 
         #check if we should take a picture
         if action == 'Capture':
-            #TODO : generate unique file name
-            pic_num = 200
-            #render redirect page
-            self.render('redirect.html',
-                        time=math.ceil(self.cam.camera.shutter_speed),
-                        picture=pic_num,
-                       )
+            #generate unique file name
+            pic_num =0
+            while get_img_urls(pic_num):
+                pic_num +=1
+
+            pic_name = num2name(pic_num)
+            #shutter speed
+            shutter_speed = self.cam.camera.shutter_speed*1e-6
+            #get redirect time
+            redir_time = math.ceil(shutter_speed)
+            if shutter_speed<1:
+                #redirect to image page
+                self.redirect(f'/image.html?img={pic_num}', True)
+            else:
+                #render redirect page
+                self.render('redirect.html',
+                            time=redir_time,
+                            picture=pic_num,
+                           )
             #TODO : take a picture here...
+            self.cam.take_picture(pic_name)
         elif action == 'Save':
             #get ISO
             iso = int(self.get_body_argument('iso'))
@@ -73,11 +151,26 @@ class MainHandler(tornado.web.RequestHandler):
             #set mode
             self.cam.camera.sensor_mode = mode
 
+            #get AWB mode
+            awb_mode = self.get_body_argument('awb_mode')
+            print(f'Setting AWB mode to : {awb_mode}')
+            #set mode
+            self.cam.camera.awb_mode = awb_mode
+
+            if self.cam.camera.awb_mode == 'off':
+                #get AWB red gain
+                awb_red = fractions.Fraction(self.get_body_argument('awb_red'))
+                #get AWB blue gain
+                awb_blue = fractions.Fraction(self.get_body_argument('awb_blue'))
+                #set AWB gain
+                self.cam.camera.awb_gains = (awb_red, awb_blue)
+
+
             #get shutter speed
-            shutter = int(self.get_body_argument('shutter'))
+            shutter = float(self.get_body_argument('shutter'))
             print(f'Setting shutter speed to : {shutter}')
             #set shutter speed
-            self.cam.camera.shutter_speed = shutter
+            self.cam.camera.shutter_speed = int(shutter*1e6)
 
             #get frame rate
             frame_n = int(self.get_body_argument('frame_n'))
@@ -95,7 +188,9 @@ class Application(tornado.web.Application):
                     (r"/index\.html", MainHandler,{'cam':cam}),
                     (r"/home\.html", MainHandler,{'cam':cam}),
                     (r"/home", MainHandler,{'cam':cam}),
+                    (r"/image.html", ImageDispHandler),
                     (r"/", MainHandler,{'cam':cam}),
+                    (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),
                 ]
         super(Application, self).__init__(handlers, *args, **kwargs)
 
@@ -104,14 +199,21 @@ def start_application():
     parser.add_argument('-p','--port',default=8888,type=int,help='port to listen to')
     parser.add_argument('--debug',action='store_true',help='print additional debug info')
 
+    if not os.path.exists(img_dir):
+        print(f'Creating image directory at {img_dir}')
+        #make image directory
+        os.makedirs(img_dir, exist_ok=True)
+
+
     args = parser.parse_args()
 
     cam = CameraCfg()
 
+
     app = Application(
                         cam,
                         template_path=os.path.join(os.path.dirname(__file__), 'templates'),
-                        static_path=os.path.join(os.path.dirname(__file__), 'static'),
+                        static_path=stat_dir,
                         debug = args.debug,
                      )
     app.listen(args.port)

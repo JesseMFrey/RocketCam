@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Picture">
+    <title>Picture</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+</head>
+<body>
+    <div class=container">
+        <div id="content" class="center">
+            <div>
+                <h1>Image Preview</h1>
+                <p>
+                    <img class="preview" src="{{ img_url }}" alt="Captured image">
+                </p>
+            </div>
+            <div>
+                <a href="index.html">back to settings</a>
+            </div>
+        </div>
+    </div>
+</body>
