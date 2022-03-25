@@ -29,6 +29,8 @@ class CameraCfg:
                     )
         self.camera.shutter_speed = 6000000
         self.camera.iso = 800
+        self.recording = False
+        self.capture_type = 'video'
         #time.sleep(30)
         #print('Camera ready!')
 
@@ -38,6 +40,22 @@ class CameraCfg:
         #capture picture
         #TODO : add choice of format
         self.camera.capture(name,format='jpeg')
+    
+    def start_recording(self, name):
+        #TESTING : print name
+        print(f'Starting recording to {name}')
+        #flag that we are recording
+        self.recording = True
+        #start recording
+        self.camera.start_recording(name)
+        
+    def stop_recording(self):
+        #TESTING : print message
+        print('Stopping video recording')
+        #flag that we are not recording
+        self.recording = False
+        #stop the recording
+        self.camera.stop_recording()
             
 def num2name(num, ext='.jpg'):
     name = name_fmt.format(num=num) + ext
@@ -79,11 +97,32 @@ class ImageDispHandler(tornado.web.RequestHandler):
                 #TODO : give some sort of error here?
                 self.redirect(r'/gallery.html',True)
 
+class VideoCapHandler(tornado.web.RequestHandler):
+    def initialize(self, cam):
+        self.cam = cam
+
+    def get(self):
+
+        self.render('video.html')
+
+    def post(self):
+
+        if self.cam.recording :
+            self.cam.stop_recording()
+
+        self.redirect(r'/index.html')
+
 class MainHandler(tornado.web.RequestHandler):
     def initialize(self,cam):
         self.cam = cam
 
     def get(self):
+
+        #check if we are recording
+        if self.cam.recording:
+            self.redirect(r'/video.html',True)
+            return
+
         frame = self.cam.camera.framerate
 
         #divide numerator into denominator
@@ -98,6 +137,7 @@ class MainHandler(tornado.web.RequestHandler):
         shutter = round(self.cam.camera.shutter_speed*1e-6, 6)
 
         self.render('index.html',
+                        capture_type=self.cam.capture_type, 
                         iso=self.cam.camera.iso,
                         isos=iso_list,
                         mode=self.cam.camera.sensor_mode,
@@ -117,28 +157,44 @@ class MainHandler(tornado.web.RequestHandler):
 
         #check if we should take a picture
         if action == 'Capture':
-            #generate unique file name
-            pic_num =0
-            while get_img_urls(pic_num):
-                pic_num +=1
-
-            pic_name = num2name(pic_num)
             #shutter speed
             shutter_speed = self.cam.camera.shutter_speed*1e-6
             #get redirect time
             redir_time = math.ceil(shutter_speed)
-            if shutter_speed<1:
-                #redirect to image page
-                self.redirect(f'/image.html?img={pic_num}', True)
+            if self.cam.capture_type == 'video':
+                #generate unique file name
+                pic_num =0
+                while get_img_urls(pic_num):
+                    pic_num +=1
+
+                pic_name = num2name(pic_num, ext='.h264')
+                #capture video
+                self.cam.start_recording(pic_name)
+                #redirect to video capture page
+                self.redirect(r'/video.html',True)
+            elif self.cam.capture_type == 'still':
+                #generate unique file name
+                pic_num =0
+                while get_img_urls(pic_num):
+                    pic_num +=1
+
+                pic_name = num2name(pic_num)
+                if shutter_speed<1:
+                    #redirect to image page
+                    self.redirect(f'/image.html?img={pic_num}', True)
+                else:
+                    #render redirect page
+                    self.render('redirect.html',
+                                time=redir_time,
+                                picture=pic_num,
+                               )
+                # take a picture here...
+                self.cam.take_picture(pic_name)
             else:
-                #render redirect page
-                self.render('redirect.html',
-                            time=redir_time,
-                            picture=pic_num,
-                           )
-            #TODO : take a picture here...
-            self.cam.take_picture(pic_name)
+                raise RuntimeError(f'Unknown capture_type "{self.cam.capture_type}"')
         elif action == 'Save':
+            #get capture type
+            self.cam.capture_type =  self.get_body_argument('capture-type')
             #get ISO
             iso = int(self.get_body_argument('iso'))
             print(f'Setting ISO to : {iso}')
@@ -189,6 +245,7 @@ class Application(tornado.web.Application):
                     (r"/home\.html", MainHandler,{'cam':cam}),
                     (r"/home", MainHandler,{'cam':cam}),
                     (r"/image.html", ImageDispHandler),
+                    (r"/video.html", VideoCapHandler,{'cam':cam}),
                     (r"/", MainHandler,{'cam':cam}),
                     (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),
                 ]

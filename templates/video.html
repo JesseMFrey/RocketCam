@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A webpage to controle a LED rocket">
+    <title>RocketCamra Control</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+    {% from picamera import PiCamera %}
+</head>
+<body>
+    <div class="container">
+        <div id="content" class="center">
+            <div>
+                <h1>Camera Controls</h1>
+
+                <form action="/video.html" method="POST">
+                    <input type="submit" name="action" value="stop" title="Stop recording.">
+                </form>
+            </div>
+        </div>
+    </div>
+</body>

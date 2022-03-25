@@ -15,6 +15,20 @@
                 <h1>Camera Controls</h1>
 
                 <form action="/index.html" method="POST">
+		            <p>
+                        <label for="video">Video </label>
+                        <input type="radio" id="video" name="capture-type" value="video"
+                            {% if capture_type=="video" %}} 
+                                checked
+                            {% end %}
+                        >
+                        <label for="still">Still </label>
+                        <input type="radio" id="still" name="capture-type" value="still"
+                            {% if capture_type=="still" %}} 
+                                checked
+                            {% end %}
+                        >
+                    </p>
                     <p>
                         <label for="shutter">Shutter speed : </label>
                         <input name="shutter" type="number" id="shutter" value="{{shutter}}" min="0" max="30" step="1e-6">
