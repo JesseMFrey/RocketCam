@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import configparser
 import fractions
 import logging
 import math
@@ -21,6 +22,9 @@ img_url = 'pictures/'
 name_fmt = 'IMG_{num}'
 
 class CameraCfg:
+    camera_settings = {'shutter_speed':int, 'iso':int, 'sensor_mode':int, 'framerate':fractions.Fraction}
+    main_settings = {'capture_type':str,}
+
     def __init__(self):
         print('Initializing camera')
         self.camera = picamera.PiCamera(
@@ -56,6 +60,39 @@ class CameraCfg:
         self.recording = False
         #stop the recording
         self.camera.stop_recording()
+
+    def save_settings(self, file):
+        config = configparser.ConfigParser()
+
+        for s in self.main_settings:
+            config['DEFAULT'][s] = getattr(self, s)
+
+        #create camera section
+        config['camera'] = {}
+
+        for s in self.camera_settings:
+            attr = getattr(self.camera, s)
+            config['camera'][s] = str(attr)
+
+        with open(file,'wt') as file:
+            config.write(file)
+
+    def load_settings(self,file):
+
+        #skip if file does not exist
+        if not os.path.exists(file):
+            return
+
+        config = configparser.ConfigParser()
+
+        config.read(file)
+
+        for s, convert_fcn in self.main_settings.items():
+            setattr(self, s, convert_fcn(config['DEFAULT'][s]))
+
+        for s, convert_fcn in self.camera_settings.items():
+            setattr(self.camera, s, convert_fcn(config['camera'][s]))
+
             
 def num2name(num, ext='.jpg'):
     name = name_fmt.format(num=num) + ext
@@ -155,6 +192,51 @@ class MainHandler(tornado.web.RequestHandler):
         #get action
         action = self.get_body_argument('action')
 
+        #update settings
+        #get capture type
+        self.cam.capture_type =  self.get_body_argument('capture-type')
+        #get ISO
+        iso = int(self.get_body_argument('iso'))
+        print(f'Setting ISO to : {iso}')
+        #set ISO
+        self.cam.camera.iso = iso
+
+        #get mode
+        mode = int(self.get_body_argument('mode'))
+        print(f'Setting sensor mode to : {mode}')
+        #set mode
+        self.cam.camera.sensor_mode = mode
+
+        #get AWB mode
+        awb_mode = self.get_body_argument('awb_mode')
+        print(f'Setting AWB mode to : {awb_mode}')
+        #set mode
+        self.cam.camera.awb_mode = awb_mode
+
+        if self.cam.camera.awb_mode == 'off':
+            #get AWB red gain
+            awb_red = fractions.Fraction(self.get_body_argument('awb_red'))
+            #get AWB blue gain
+            awb_blue = fractions.Fraction(self.get_body_argument('awb_blue'))
+            #set AWB gain
+            self.cam.camera.awb_gains = (awb_red, awb_blue)
+
+
+        #get shutter speed
+        shutter = float(self.get_body_argument('shutter'))
+        print(f'Setting shutter speed to : {shutter}')
+        #set shutter speed
+        self.cam.camera.shutter_speed = int(shutter*1e6)
+
+        #get frame rate
+        frame_n = int(self.get_body_argument('frame_n'))
+        frame_d = int(self.get_body_argument('frame_d'))
+        frame = fractions.Fraction(frame_n, frame_d)
+        print(f'Setting frame rate to : {frame}')
+        #set frame rate
+        self.cam.camera.framerate = frame
+
+
         #check if we should take a picture
         if action == 'Capture':
             #shutter speed
@@ -193,50 +275,12 @@ class MainHandler(tornado.web.RequestHandler):
             else:
                 raise RuntimeError(f'Unknown capture_type "{self.cam.capture_type}"')
         elif action == 'Save':
-            #get capture type
-            self.cam.capture_type =  self.get_body_argument('capture-type')
-            #get ISO
-            iso = int(self.get_body_argument('iso'))
-            print(f'Setting ISO to : {iso}')
-            #set ISO
-            self.cam.camera.iso = iso
-
-            #get mode
-            mode = int(self.get_body_argument('mode'))
-            print(f'Setting sensor mode to : {mode}')
-            #set mode
-            self.cam.camera.sensor_mode = mode
-
-            #get AWB mode
-            awb_mode = self.get_body_argument('awb_mode')
-            print(f'Setting AWB mode to : {awb_mode}')
-            #set mode
-            self.cam.camera.awb_mode = awb_mode
-
-            if self.cam.camera.awb_mode == 'off':
-                #get AWB red gain
-                awb_red = fractions.Fraction(self.get_body_argument('awb_red'))
-                #get AWB blue gain
-                awb_blue = fractions.Fraction(self.get_body_argument('awb_blue'))
-                #set AWB gain
-                self.cam.camera.awb_gains = (awb_red, awb_blue)
-
-
-            #get shutter speed
-            shutter = float(self.get_body_argument('shutter'))
-            print(f'Setting shutter speed to : {shutter}')
-            #set shutter speed
-            self.cam.camera.shutter_speed = int(shutter*1e6)
-
-            #get frame rate
-            frame_n = int(self.get_body_argument('frame_n'))
-            frame_d = int(self.get_body_argument('frame_d'))
-            frame = fractions.Fraction(frame_n, frame_d)
-            print(f'Setting frame rate to : {frame}')
-            #set frame rate
-            self.cam.camera.framerate = frame
+            #save settings to file
+            self.cam.save_settings('settings.cfg')
 
             self.redirect(r'/',True)
+        else:
+            raise RuntimeError(f'Unknown action "{action}"')
 
 class Application(tornado.web.Application):
     def __init__(self, cam, *args, **kwargs):
@@ -265,6 +309,8 @@ def start_application():
     args = parser.parse_args()
 
     cam = CameraCfg()
+
+    cam.load_settings('settings.cfg')
 
 
     app = Application(
