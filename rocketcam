@@ -74,8 +74,11 @@ class CameraCfg:
             attr = getattr(self.camera, s)
             config['camera'][s] = str(attr)
 
-        with open(file,'wt') as file:
-            config.write(file)
+        # path is relative too executable
+        path = os.path.join(os.path.dirname(__file__), file)
+
+        with open(path,'wt') as fp:
+            config.write(fp)
 
     def load_settings(self,file):
 
