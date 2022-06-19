@@ -35,6 +35,7 @@ class CameraCfg:
         self.camera.iso = 800
         self.recording = False
         self.capture_type = 'video'
+        self.rec_start_time = None
         #time.sleep(30)
         #print('Camera ready!')
 
@@ -52,14 +53,24 @@ class CameraCfg:
         self.recording = True
         #start recording
         self.camera.start_recording(name)
+        #save start time
+        self.rec_start_time = time.time()
         
     def stop_recording(self):
         #TESTING : print message
         print('Stopping video recording')
         #flag that we are not recording
         self.recording = False
+        #clear start time
+        self.rec_start_time = None
         #stop the recording
         self.camera.stop_recording()
+
+    def get_rec_time(self):
+        if not self.recording or not self.rec_start_time:
+            return None
+        #return elapsed time in seconds
+        return self.rec_start_time - time.time()
 
     def save_settings(self, file):
         config = configparser.ConfigParser()
