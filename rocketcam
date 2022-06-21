@@ -251,13 +251,9 @@ class VideoDispHandler(tornado.web.RequestHandler):
             print(f'get_vid_urls returned : {url}')
 
             if url:
-                vid_name, raw_name = url
+                vid_url, raw_url = url
 
-                vid_url = vid_name
-
-                print(f'Video path name : {vid_url}')
-
-                self.render('vidpreview.html',vid_url=vid_url)
+                self.render('vidpreview.html',vid_url=vid_url, raw_url=raw_url)
             else:
                 #TODO : give some sort of error here?
                 self.redirect(r'/gallery.html',True)
