@@ -2,11 +2,15 @@
 
 import argparse
 import configparser
+import datetime
 import fractions
+import json
 import logging
 import math
 import os.path
 import picamera
+import re
+import subprocess
 import time
 import tornado.escape
 import tornado.ioloop
@@ -36,6 +40,7 @@ class CameraCfg:
         self.recording = False
         self.capture_type = 'video'
         self.rec_start_time = None
+        self.rec_name = None
         #time.sleep(30)
         #print('Camera ready!')
 
@@ -51,6 +56,8 @@ class CameraCfg:
         print(f'Starting recording to {name}')
         #flag that we are recording
         self.recording = True
+        #set recording name
+        self.rec_name = name
         #start recording
         self.camera.start_recording(name)
         #save start time
@@ -63,8 +70,13 @@ class CameraCfg:
         self.recording = False
         #clear start time
         self.rec_start_time = None
+        #clear file name
+        file = self.rec_name
+        self.rec_name = None
         #stop the recording
         self.camera.stop_recording()
+        #return file name
+        return file
 
     def get_rec_time(self):
         if not self.recording or not self.rec_start_time:
@@ -107,10 +119,36 @@ class CameraCfg:
         for s, convert_fcn in self.camera_settings.items():
             setattr(self.camera, s, convert_fcn(config['camera'][s]))
 
+    def frame_info(self):
+        try:
+            dat = self.camera.frame
+        except picamera.PiCameraRuntimeError:
+            return None
+
+        return dat
+
             
 def num2name(num, ext='.jpg'):
     name = name_fmt.format(num=num) + ext
     return os.path.join(img_dir, name)
+
+def get_pic_num():
+    #list files in image dir
+    files = os.listdir(img_dir)
+
+    pic_num = 0
+
+    for n in files:
+        #search filename for image number
+        m = re.search(r'IMG_(?P<num>\d+)\.[A-Za-z0-9]+',n)
+
+        if m:
+            num = int(m.group('num'))
+            if num > pic_num:
+                pic_num = num
+
+    #return the first available number
+    return pic_num + 1
 
 
 def get_img_urls(num):
@@ -123,6 +161,56 @@ def get_img_urls(num):
     else:
         #does not exist, return None
         return None
+
+def get_vid_urls(num):
+    #TODO: needs a lot of work here. probably needs to convert to a container format to be useable.
+    #TODO: detect fake long exposure pictures?
+    raw = name_fmt.format(num=num) + '.h264'
+    raw_path = os.path.join(img_dir, raw)
+    #get converted path
+    name = name_fmt.format(num=num) + '.mp4'
+    vid_path = os.path.join(img_dir, name)
+    if os.path.exists(raw_path):
+        raw_url = '/' + img_url + raw
+        vid_url = '/' + img_url + name
+        #check if containerized video exists
+        if not os.path.exists(vid_path):
+            #create containerized format with ffmpeg
+            cp = subprocess.run(['ffmpeg', '-nostdin', '-probesize', '10M', '-i', raw_path, '-c:v', 'copy', '-f', 'mp4', vid_path])
+
+            if cp.returncode:
+                #there was an error
+                vid_url = None
+
+        return (vid_url, raw_url)
+    else:
+        #does not exist, return None
+        return None
+
+class StatusHandler(tornado.web.RequestHandler):
+    def initialize(self, cam):
+        self.cam = cam
+
+    def set_default_headers(self):
+        #status is retunded with json
+        self.set_header("Content-Type", 'application/json')
+
+    def get(self):
+        stat_type = self.get_argument('type', default='frame')
+
+        if stat_type == 'frame':
+            info = self.cam.frame_info()
+
+            if info:
+                ftime = datetime.timedelta(microseconds=info.timestamp)
+                resp = json.dumps({'recording': True, 'index': info.index, 'timestamp': info.timestamp, 'time': str(ftime)})
+            else:
+                #no frame info, fill in dummy values
+                resp = json.dumps({'recording': False, 'index': 0, 'timestamp': ''})
+        else:
+            raise ValueError(f'Unknown status type : "{stat_type}"')
+
+        self.write(resp)
 
 class ImageDispHandler(tornado.web.RequestHandler):
     def initialize(self):
@@ -148,6 +236,32 @@ class ImageDispHandler(tornado.web.RequestHandler):
                 #TODO : give some sort of error here?
                 self.redirect(r'/gallery.html',True)
 
+class VideoDispHandler(tornado.web.RequestHandler):
+    def initialize(self):
+        pass
+
+    def get(self):
+        vid_num = self.get_argument('vid', default=None)
+
+        if vid_num is None:
+            self.redirect(r'/gallery.html',True)
+        else:
+            url = get_vid_urls(int(vid_num))
+
+            print(f'get_vid_urls returned : {url}')
+
+            if url:
+                vid_name, raw_name = url
+
+                vid_url = vid_name
+
+                print(f'Video path name : {vid_url}')
+
+                self.render('vidpreview.html',vid_url=vid_url)
+            else:
+                #TODO : give some sort of error here?
+                self.redirect(r'/gallery.html',True)
+
 class VideoCapHandler(tornado.web.RequestHandler):
     def initialize(self, cam):
         self.cam = cam
@@ -158,10 +272,26 @@ class VideoCapHandler(tornado.web.RequestHandler):
 
     def post(self):
 
-        if self.cam.recording :
-            self.cam.stop_recording()
+        #get action
+        action = self.get_body_argument('action')
 
-        self.redirect(r'/index.html')
+        if action == 'stop':
+            if self.cam.recording :
+                file_name = self.cam.stop_recording()
+
+                m = re.search(r'IMG_(?P<num>\d+)\.[A-Za-z0-9]+',file_name)
+
+                if not m:
+                    raise RuntimeError(f'Unable to find image number in : "{file_name}"')
+                
+                file_num = m.group('num')
+
+                self.redirect(r'/vidpreview.html?vid=' + file_num)
+            else:
+                self.redirect(r'/gallery.html')
+        else:
+            #unknown action
+            raise RuntimeError(f'Invalid action : "{action}"')
 
 class MainHandler(tornado.web.RequestHandler):
     def initialize(self,cam):
@@ -259,10 +389,7 @@ class MainHandler(tornado.web.RequestHandler):
             redir_time = math.ceil(shutter_speed)
             if self.cam.capture_type == 'video':
                 #generate unique file name
-                pic_num =0
-                while get_img_urls(pic_num):
-                    pic_num +=1
-
+                pic_num = get_pic_num()
                 pic_name = num2name(pic_num, ext='.h264')
                 #capture video
                 self.cam.start_recording(pic_name)
@@ -270,10 +397,7 @@ class MainHandler(tornado.web.RequestHandler):
                 self.redirect(r'/video.html',True)
             elif self.cam.capture_type == 'still':
                 #generate unique file name
-                pic_num =0
-                while get_img_urls(pic_num):
-                    pic_num +=1
-
+                pic_num = get_pic_num()
                 pic_name = num2name(pic_num)
                 if shutter_speed<1:
                     #redirect to image page
@@ -304,6 +428,8 @@ class Application(tornado.web.Application):
                     (r"/home", MainHandler,{'cam':cam}),
                     (r"/image.html", ImageDispHandler),
                     (r"/video.html", VideoCapHandler,{'cam':cam}),
+                    (r"/vidpreview.html", VideoDispHandler),
+                    (r"/status", StatusHandler,{'cam':cam}),
                     (r"/", MainHandler,{'cam':cam}),
                     (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),
                 ]

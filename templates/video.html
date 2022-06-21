@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="A webpage to controle a LED rocket">
     <title>RocketCamra Control</title>
     <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
-    {% from picamera import PiCamera %}
+    <script src = "{{ static_url("jquery-3.6.0.min.js") }}"></script>
 </head>
 <body>
     <div class="container">
@@ -17,7 +16,17 @@
                 <form action="/video.html" method="POST">
                     <input type="submit" name="action" value="stop" title="Stop recording.">
                 </form>
+		<p id="ts">Timestamp : 0</p>
             </div>
         </div>
     </div>
+
+<script type="text/javascript">
+        setInterval(function() {
+        $.getJSON("/status",function(data){
+		document.getElementById("ts").innerHTML = "Timestamp : " + data.time;
+        });
+        }, 100);
+</script>
+
 </body>
