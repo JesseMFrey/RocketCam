@@ -187,6 +187,61 @@ def get_vid_urls(num):
         #does not exist, return None
         return None
 
+def find_capture_files():
+    files = os.listdir(img_dir)
+
+    file_dict = {}
+
+    for n in files:
+        #check if it matches image name and capture parts
+        m = re.match(r'(?P<base_name>IMG_(?P<num>\d+))'
+                      r'(?:_(?P<extra>[A-Za-z0-9_]+))?'
+                      r'\.[A-Za-z0-9]+',n)
+
+        if m:
+            if m.group('base_name') in file_dict:
+                file_dict[m.group('base_name')].append(n)
+            else:
+                file_dict[m.group('base_name')] = [n]
+
+    return file_dict
+
+def img_file_comp(n):
+    #check for thumbnail
+    if re.match('IMG_[0-9]+_thumb.[A-Za-z0-9]',n):
+        #sort twards the end
+        return 100
+
+    _, ext = os.path.splitext(n)
+
+    ext_order = {'.h264' : 0,
+                 '.mp4'  : 1,
+                 '.jpg'  : 5,
+                 '.png'  : 6,
+                 }
+
+    if ext in ext_order:
+        return ext_order[ext]
+    else:
+        #unknown file, put at the end
+        return 150
+
+def generate_thumbnails(fd):
+
+    for k,v in fd.items():
+        #sort files
+        v.sort(key=img_file_comp)
+        if not any([re.match('IMG_[0-9]+_thumb.[A-Za-z0-9]',s) for s in v ]):
+            out_path = os.path.join(img_dir ,k+'_thumb.jpg')
+            src_path = os.path.join(img_dir, v[0])
+            #make thumbnail from first file in the list
+            subprocess.call(['ffmpeg', '-i', src_path ,
+                                 '-ss', '00:00:00.000',
+                                 '-vframes', '1',
+                                 '-vf', 'scale=64:48',
+                                 out_path])
+ 
+
 class StatusHandler(tornado.web.RequestHandler):
     def initialize(self, cam):
         self.cam = cam
@@ -257,6 +312,36 @@ class VideoDispHandler(tornado.web.RequestHandler):
             else:
                 #TODO : give some sort of error here?
                 self.redirect(r'/gallery.html',True)
+
+def img_num(n):
+    m = re.match('IMG_(?P<num>[0-9]+)', n)
+
+    if m:
+        return int(m.group('num'))
+    else:
+        return -1
+
+
+class GalleryHandler(tornado.web.RequestHandler):
+
+    def get(self):
+
+        file_dict = find_capture_files()
+
+        #generate thumbnails
+        generate_thumbnails(file_dict)
+
+        print(f'file_dict : {file_dict}')
+
+        #get list of image names
+        img_lst = list(file_dict.keys())
+        #sort list
+        img_lst.sort(key=img_num)
+
+        print(f'img_lst : {img_lst}')
+
+        self.render('gallery.html', images=img_lst)
+
 
 class VideoCapHandler(tornado.web.RequestHandler):
     def initialize(self, cam):
@@ -425,6 +510,7 @@ class Application(tornado.web.Application):
                     (r"/image.html", ImageDispHandler),
                     (r"/video.html", VideoCapHandler,{'cam':cam}),
                     (r"/vidpreview.html", VideoDispHandler),
+                    (r"/gallery.html", GalleryHandler),
                     (r"/status", StatusHandler,{'cam':cam}),
                     (r"/", MainHandler,{'cam':cam}),
                     (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),

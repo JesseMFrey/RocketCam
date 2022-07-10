@@ -4,6 +4,24 @@ body {
 
 }
 
+div.gallery {
+    float: left;
+    padding-right: 1em;
+    padding-left: 1em;
+    padding-top: 2mm;
+    padding-bottom: 2mm;
+}
+
+.footer {
+    width: 100%;
+    min-width: 100%;
+    float: none;
+    clear: both;
+    padding-top: 2mm;
+    padding-bottom: 2mm;
+    display: block;
+}
+
 #content {
     /*max-width : 5in;*/
     background-color: #383838;
@@ -16,12 +34,20 @@ body {
     margin: auto;
 }
 
-.left, .right, .center {
+.left, .right {
     float: left;
-    width: 33%;
+    width: 18%;
+    min-width: 18%;
     color: white;
     padding: 10px;
-    height: 500px;
+    text-align: center;
+}
+
+.center {
+    float: left;
+    width: 60%;
+    color: white;
+    padding: 10px;
     text-align: center;
 }
 

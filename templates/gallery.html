@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Gallery">
+    <title>Gallery</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+</head>
+<body>
+    <div class=container">
+        <div id="content" class="center">
+            <h1>Gallery</h1>
+            <div>
+                {% for n in images %}
+                    <div class="gallery">
+                        <img class="gallery" src="pictures/{{ n }}_thumb.jpg">
+                        <p>
+                            {{ n }}
+                        </p>
+                    </div>
+                {% end %}
+            </div>
+            <div>
+                <a href="index.html">back to settings</a>
+            </div>
+        </div>
+    </div>
+</body>
