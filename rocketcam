@@ -331,14 +331,14 @@ class GalleryHandler(tornado.web.RequestHandler):
         #generate thumbnails
         generate_thumbnails(file_dict)
 
-        print(f'file_dict : {file_dict}')
+        #print(f'file_dict : {file_dict}')
 
         #get list of image names
         img_lst = list(file_dict.keys())
         #sort list
         img_lst.sort(key=img_num)
 
-        print(f'img_lst : {img_lst}')
+        #print(f'img_lst : {img_lst}')
 
         self.render('gallery.html', images=img_lst)
 
@@ -412,7 +412,7 @@ class MainHandler(tornado.web.RequestHandler):
                    )
 
     def post(self):
-        print(self.request.body)
+        #print(self.request.body)
 
         #get action
         action = self.get_body_argument('action')
