@@ -374,7 +374,7 @@ class VideoCapHandler(tornado.web.RequestHandler):
             #unknown action
             raise RuntimeError(f'Invalid action : "{action}"')
 
-class MainHandler(tornado.web.RequestHandler):
+class SettingsHandler(tornado.web.RequestHandler):
     def initialize(self,cam):
         self.cam = cam
 
@@ -503,16 +503,18 @@ class MainHandler(tornado.web.RequestHandler):
 
 class Application(tornado.web.Application):
     def __init__(self, cam, *args, **kwargs):
-        handlers = [(r"/index", MainHandler,{'cam':cam}),
-                    (r"/index\.html", MainHandler,{'cam':cam}),
-                    (r"/home\.html", MainHandler,{'cam':cam}),
-                    (r"/home", MainHandler,{'cam':cam}),
+        handlers = [(r"/index", SettingsHandler,{'cam':cam}),
+                    (r"/index\.html", SettingsHandler,{'cam':cam}),
+                    (r"/home\.html", SettingsHandler,{'cam':cam}),
+                    (r"/home", SettingsHandler,{'cam':cam}),
+                    (r"/settings\.html", SettingsHandler,{'cam':cam}),
+                    (r"/settings", SettingsHandler,{'cam':cam}),
                     (r"/image.html", ImageDispHandler),
                     (r"/video.html", VideoCapHandler,{'cam':cam}),
                     (r"/vidpreview.html", VideoDispHandler),
                     (r"/gallery.html", GalleryHandler),
                     (r"/status", StatusHandler,{'cam':cam}),
-                    (r"/", MainHandler,{'cam':cam}),
+                    (r"/", SettingsHandler,{'cam':cam}),
                     (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),
                 ]
         super(Application, self).__init__(handlers, *args, **kwargs)
