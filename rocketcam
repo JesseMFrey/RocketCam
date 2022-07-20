@@ -374,6 +374,10 @@ class VideoCapHandler(tornado.web.RequestHandler):
             #unknown action
             raise RuntimeError(f'Invalid action : "{action}"')
 
+class IndexHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render('index.html')
+
 class SettingsHandler(tornado.web.RequestHandler):
     def initialize(self,cam):
         self.cam = cam
@@ -398,7 +402,7 @@ class SettingsHandler(tornado.web.RequestHandler):
         #get shutter speed
         shutter = round(self.cam.camera.shutter_speed*1e-6, 6)
 
-        self.render('index.html',
+        self.render('settings.html',
                         capture_type=self.cam.capture_type, 
                         iso=self.cam.camera.iso,
                         isos=iso_list,
@@ -503,10 +507,10 @@ class SettingsHandler(tornado.web.RequestHandler):
 
 class Application(tornado.web.Application):
     def __init__(self, cam, *args, **kwargs):
-        handlers = [(r"/index", SettingsHandler,{'cam':cam}),
-                    (r"/index\.html", SettingsHandler,{'cam':cam}),
-                    (r"/home\.html", SettingsHandler,{'cam':cam}),
-                    (r"/home", SettingsHandler,{'cam':cam}),
+        handlers = [(r"/index", IndexHandler),
+                    (r"/index\.html", IndexHandler),
+                    (r"/home\.html", IndexHandler),
+                    (r"/home", IndexHandler),
                     (r"/settings\.html", SettingsHandler,{'cam':cam}),
                     (r"/settings", SettingsHandler,{'cam':cam}),
                     (r"/image.html", ImageDispHandler),
@@ -514,7 +518,7 @@ class Application(tornado.web.Application):
                     (r"/vidpreview.html", VideoDispHandler),
                     (r"/gallery.html", GalleryHandler),
                     (r"/status", StatusHandler,{'cam':cam}),
-                    (r"/", SettingsHandler,{'cam':cam}),
+                    (r"/", IndexHandler),
                     (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),
                 ]
         super(Application, self).__init__(handlers, *args, **kwargs)

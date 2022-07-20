@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A webpage to controle a LED rocket">
+    <title>RocketCamra Control</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+    {% from picamera import PiCamera %}
+</head>
+<body>
+    <div class="container">
+        <div id="content" class="center">
+            <div>
+                <h1>Camera Controls</h1>
+
+                <form action="/settings.html" method="POST">
+		            <p>
+                        <label for="video">Video </label>
+                        <input type="radio" id="video" name="capture-type" value="video"
+                            {% if capture_type=="video" %}} 
+                                checked
+                            {% end %}
+                        >
+                        <label for="still">Still </label>
+                        <input type="radio" id="still" name="capture-type" value="still"
+                            {% if capture_type=="still" %}} 
+                                checked
+                            {% end %}
+                        >
+                    </p>
+                    <p>
+                        <label for="shutter">Shutter speed : </label>
+                        <input name="shutter" type="number" id="shutter" value="{{shutter}}" min="0" max="30" step="1e-6">
+                    </p>
+                    <p>
+                        <label for="iso">ISO : </label>
+                        <select name="iso" id="iso" title="ISO speed">
+                            {% for i in isos %}
+                            <option value="{{i}}"
+                                    {% if i==iso %}
+                                        selected=True
+                                    {% end %}
+                                    >{{i}}</option>
+                            {% end %}
+                        </select>
+                    </p>
+                    <p>
+                        <label for="mode">Camera mode : </label>
+                        <select name="mode" id="mode" title="Camera mode">
+                            {% for k, v in PiCamera.EXPOSURE_MODES.items() %}
+                            <option value="{{v}}"
+                                    {% if mode==v %}
+                                        selected=True
+                                    {% end %}
+                                >{{k}}</option>
+                            {% end %}
+                        </select>
+                    </p>
+                    <p>
+                        <label for="frame_n">Frame rate : </label>
+                        <input type="number" name="frame_n" id="frame_n" value="{{frame_n}}" min="1" max="1000000">
+                        &sol;
+                        <input type="number" name="frame_d" id="frame_d" value="{{frame_d}}" min="1" max="100000">
+                    </p>
+                    <p>
+                        <label for="res">Image resolution : </label>
+                        <select name="resolution" id="res" title="Image resolution">
+                            <option value="{{PiCamera.MAX_RESOLUTION}}">max ({{PiCamera.MAX_RESOLUTION}})</option>
+                        </select>
+                    </p>
+                    <p>
+                        <label for="awb_mode">AWB mode : </label>
+                        <select name="awb_mode" id="awb_mode" title="Auto White Balance mode">
+                            {% for m in PiCamera.AWB_MODES.keys() %}
+                                <option value="{{m}}"
+                                    {% if m==awb_mode %}
+                                        selected=True
+                                        {% end %}
+                                >{{m}}</option>
+                            {% end %}
+                        </select>
+                    </p>
+                    <p>
+                        <label for="awb_red">AWB red : </label>
+                        <input type="number" name="awb_red" id="awb_red" value="{{round(float(awb_gain[0]),4)}}" min="0" step="1e-4">
+                        <label for="awb_blue">AWB blue : </label>
+                        <input type="number" name="awb_blue" id="awb_blue" value="{{round(float(awb_gain[1]),4)}}" min="0" step="1e-4">
+                    </p>
+                    <p>
+                        <input type="submit" name="action" value="Capture" title="Take a picture with the saved settings">
+                        <input type="submit" name="action" value="Save" title="Save and apply settins.">
+                </form>
+                <p>
+                <a href="index.html">main page</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
