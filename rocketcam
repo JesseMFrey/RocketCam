@@ -340,7 +340,34 @@ class GalleryHandler(tornado.web.RequestHandler):
 
         #print(f'img_lst : {img_lst}')
 
-        self.render('gallery.html', images=img_lst)
+        img_url = []
+        for img in img_lst:
+            #extract number from image name
+            m = re.match(r'IMG_(?P<num>\d+)',img)
+            #check that we matched
+            if not m:
+                raise RuntimeError(f'Bad image name "{img}"')
+            #convert to integer
+            img_n = int(m.group('num'))
+            #get the list of files for this image/video
+            files = file_dict[img]
+            #sort videos first
+            files.sort(key=img_file_comp)
+            #get the first in the list
+            first_f = files[0]
+            #get extension
+            _, ext_first = os.path.splitext(first_f)
+            #check for video file
+            if ext_first in ('.h264', '.mp4'):
+                #add video preview URL
+                img_url.append(f'vidpreview.html?vid={img_n}')
+            else:
+                #otherwise this is a still file
+                #TODO : verify?
+                img_url.append(f'image.html?img={img_n}')
+
+
+        self.render('gallery.html', images=img_lst, urls=img_url)
 
 
 class VideoCapHandler(tornado.web.RequestHandler):

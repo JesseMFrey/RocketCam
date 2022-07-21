@@ -12,11 +12,11 @@
         <div id="content" class="center">
             <h1>Gallery</h1>
             <div>
-                {% for n in images %}
+                {% for n,u in zip(images,urls) %}
                     <div class="gallery">
                         <img class="gallery" src="pictures/{{ n }}_thumb.jpg">
                         <p>
-                            {{ n }}
+                        <a href="{{ u }}">{{ n }}</a>
                         </p>
                     </div>
                 {% end %}
