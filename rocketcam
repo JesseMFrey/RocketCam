@@ -275,7 +275,7 @@ class ImageDispHandler(tornado.web.RequestHandler):
         img_num = self.get_argument('img', default=None)
 
         if img_num is None:
-            self.redirect(r'/gallery.html',True)
+            self.redirect(r'/gallery.html')
         else:
             url = get_img_urls(int(img_num))
 
@@ -289,7 +289,7 @@ class ImageDispHandler(tornado.web.RequestHandler):
                 self.render('image.html',img_url=jpg_url)
             else:
                 #TODO : give some sort of error here?
-                self.redirect(r'/gallery.html',True)
+                self.redirect(r'/gallery.html')
 
 class VideoDispHandler(tornado.web.RequestHandler):
     def initialize(self):
@@ -299,7 +299,7 @@ class VideoDispHandler(tornado.web.RequestHandler):
         vid_num = self.get_argument('vid', default=None)
 
         if vid_num is None:
-            self.redirect(r'/gallery.html',True)
+            self.redirect(r'/gallery.html')
         else:
             url = get_vid_urls(int(vid_num))
 
@@ -413,7 +413,7 @@ class SettingsHandler(tornado.web.RequestHandler):
 
         #check if we are recording
         if self.cam.recording:
-            self.redirect(r'/video.html',True)
+            self.redirect(r'/video.html')
             return
 
         frame = self.cam.camera.framerate
@@ -506,14 +506,14 @@ class SettingsHandler(tornado.web.RequestHandler):
                 #capture video
                 self.cam.start_recording(pic_name)
                 #redirect to video capture page
-                self.redirect(r'/video.html',True)
+                self.redirect(r'/video.html')
             elif self.cam.capture_type == 'still':
                 #generate unique file name
                 pic_num = get_pic_num()
                 pic_name = num2name(pic_num)
                 if shutter_speed<1:
                     #redirect to image page
-                    self.redirect(f'/image.html?img={pic_num}', True)
+                    self.redirect(f'/image.html?img={pic_num}')
                 else:
                     #render redirect page
                     self.render('redirect.html',
