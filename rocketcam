@@ -2,8 +2,10 @@
 
 import argparse
 import configparser
+import cv2
 import datetime
 import fractions
+import glob
 import json
 import logging
 import math
@@ -11,6 +13,7 @@ import os.path
 import picamera
 import re
 import subprocess
+import sys
 import time
 import tornado.escape
 import tornado.ioloop
@@ -127,6 +130,67 @@ class CameraCfg:
 
         return dat
 
+class PhotoRenderer:
+
+    def __init__(self):
+        self.pipe = None
+        self.status = {}
+
+    def is_running(self):
+        if not self.pipe:
+            return False
+
+        return self.pipe.poll() is None
+
+    async def data_callback(self):
+
+        #get the IO loop
+        io_loop = tornado.ioloop.IOLoop.current()
+        while self.pipe.poll() is None:
+            line = await io_loop.run_in_executor(None, self.pipe.stdout.readline)
+            m = re.match(r'(?P<opp>Processing|Loading|Averaging|Encoding image|Scaling values|Writing)(?:\s+(?:(?:frame\s+(?P<frame>\d+))|(?:\"(?P<fname>(?:[^\"\\]|\\.)*)\")|(?:(?P<num>\d+)/(?P<denom>\d+))))?',line)
+            #check if we had a match
+            if m:
+                stat_dict = m.groupdict()
+                #convert numbers to int
+                for g in ('frame','num','denom'):
+                    if stat_dict[g] is not None:
+                        stat_dict[g] = int(stat_dict[g])
+
+                self.status = stat_dict
+            else:
+                line = line.strip()
+                if line:
+                    print(f'Unknown line from renderer : "{line}"')
+
+        #render complete, update status
+        self.status = {'opp' : 'Complete'}
+
+    def start(self, in_name, out_name):
+
+        if self.is_running():
+            raise RuntimeError('A render is already running')
+
+        self.status = {'opp' : 'Starting'}
+        # start rendering
+        self.pipe = subprocess.Popen([sys.executable,
+                                      '-m', 'fakelongexposure', 
+                                      '--progress',
+                                      f'--output={out_name}', in_name],
+                                      universal_newlines=True,
+                                      bufsize=1,
+                                      stdin=subprocess.DEVNULL,
+                                      stdout=subprocess.PIPE,
+                                      )
+
+        #get the IO loop
+        io_loop = tornado.ioloop.IOLoop.current()
+
+        #add callback for reading progress
+        io_loop.spawn_callback(self.data_callback)
+
+
+
             
 def num2name(num, ext='.jpg'):
     name = name_fmt.format(num=num) + ext
@@ -164,7 +228,6 @@ def get_img_urls(num):
 
 def get_vid_urls(num):
     #TODO: needs a lot of work here. probably needs to convert to a container format to be useable.
-    #TODO: detect fake long exposure pictures?
     raw = name_fmt.format(num=num) + '.h264'
     raw_path = os.path.join(img_dir, raw)
     #get converted path
@@ -186,6 +249,19 @@ def get_vid_urls(num):
     else:
         #does not exist, return None
         return None
+
+def get_long_exp_urls(num):
+    files = glob.iglob(os.path.join(img_dir,f'IMG_{num}_longexp*.png'))
+
+    urls = []
+    for f in files:
+        _, f = os.path.split(f)
+        url = img_url + f
+        urls.append(url)
+
+
+    return urls
+
 
 def find_capture_files():
     files = os.listdir(img_dir)
@@ -243,8 +319,9 @@ def generate_thumbnails(fd):
  
 
 class StatusHandler(tornado.web.RequestHandler):
-    def initialize(self, cam):
+    def initialize(self, cam, renderer):
         self.cam = cam
+        self.renderer = renderer
 
     def set_default_headers(self):
         #status is retunded with json
@@ -262,6 +339,10 @@ class StatusHandler(tornado.web.RequestHandler):
             else:
                 #no frame info, fill in dummy values
                 resp = json.dumps({'recording': False, 'index': 0, 'timestamp': ''})
+        elif stat_type == 'renderer':
+            info = self.renderer.status
+
+            resp = json.dumps(info)
         else:
             raise ValueError(f'Unknown status type : "{stat_type}"')
 
@@ -305,13 +386,60 @@ class VideoDispHandler(tornado.web.RequestHandler):
 
             print(f'get_vid_urls returned : {url}')
 
+            lexp_urls = get_long_exp_urls(vid_num)
+
             if url:
                 vid_url, raw_url = url
 
-                self.render('vidpreview.html',vid_url=vid_url, raw_url=raw_url)
+                self.render('vidpreview.html',vid_url=vid_url, raw_url=raw_url, stills=lexp_urls)
             else:
                 #TODO : give some sort of error here?
-                self.redirect(r'/gallery.html',True)
+                self.redirect(r'/gallery.html')
+
+class FakeExposureSettingsHandler(tornado.web.RequestHandler):
+    def get(self):
+        vid_url = self.get_argument('vid', default=None)
+
+        if vid_url is None:
+            self.redirect(r'/gallery.html')
+        else:
+
+            vid_path = os.path.join(img_dir, os.path.relpath(vid_url, '/'+img_url))
+
+            if not os.path.exists(vid_path):
+                raise RuntimeError(f'Video path "{vid_path}" does not exist')
+
+            self.render(r'fake-exposure-settings.html', src_url=vid_url)
+
+class FakeExposureRenderHandler(tornado.web.RequestHandler):
+    def initialize(self, renderer):
+        self.renderer = renderer
+
+    def get(self):
+        vid_url = self.get_argument('vid', default=None)
+
+        if vid_url is None:
+            self.redirect(r'/gallery.html')
+        else:
+
+            vid_path = os.path.join(img_dir, os.path.relpath(vid_url, '/'+img_url))
+
+            if not os.path.exists(vid_path):
+                raise RuntimeError(f'Video path "{vid_path}" does not exist')
+
+            fcount = 1
+            start = self.get_argument('start', default=0)
+            end = self.get_argument('end', default='last')
+
+            _, tail = os.path.split(vid_path)
+            name, _ = os.path.splitext(tail)
+
+            out_name = f'{name}_longexp_f{fcount}_s{start}_e{end}.png'
+            out_path = os.path.join(img_dir, out_name)
+
+            self.renderer.start(vid_path, out_path)
+
+            self.render(r'fake-exposure-rendering.html', out_name=out_name)
 
 def img_num(n):
     m = re.match('IMG_(?P<num>[0-9]+)', n)
@@ -340,7 +468,7 @@ class GalleryHandler(tornado.web.RequestHandler):
 
         #print(f'img_lst : {img_lst}')
 
-        img_url = []
+        img_urls = []
         for img in img_lst:
             #extract number from image name
             m = re.match(r'IMG_(?P<num>\d+)',img)
@@ -360,14 +488,14 @@ class GalleryHandler(tornado.web.RequestHandler):
             #check for video file
             if ext_first in ('.h264', '.mp4'):
                 #add video preview URL
-                img_url.append(f'vidpreview.html?vid={img_n}')
+                img_urls.append(f'vidpreview.html?vid={img_n}')
             else:
                 #otherwise this is a still file
                 #TODO : verify?
-                img_url.append(f'image.html?img={img_n}')
+                img_urls.append(f'image.html?img={img_n}')
 
 
-        self.render('gallery.html', images=img_lst, urls=img_url)
+        self.render('gallery.html', images=img_lst, urls=img_urls)
 
 
 class VideoCapHandler(tornado.web.RequestHandler):
@@ -528,12 +656,12 @@ class SettingsHandler(tornado.web.RequestHandler):
             #save settings to file
             self.cam.save_settings('settings.cfg')
 
-            self.redirect(r'/',True)
+            self.redirect(r'/')
         else:
             raise RuntimeError(f'Unknown action "{action}"')
 
 class Application(tornado.web.Application):
-    def __init__(self, cam, *args, **kwargs):
+    def __init__(self, cam, renderer, *args, **kwargs):
         handlers = [(r"/index", IndexHandler),
                     (r"/index\.html", IndexHandler),
                     (r"/home\.html", IndexHandler),
@@ -543,8 +671,12 @@ class Application(tornado.web.Application):
                     (r"/image.html", ImageDispHandler),
                     (r"/video.html", VideoCapHandler,{'cam':cam}),
                     (r"/vidpreview.html", VideoDispHandler),
+                    (r"/fake-exposure-settings.html", FakeExposureSettingsHandler),
+                    (r"/fake-exposure-settings", FakeExposureSettingsHandler),
+                    (r"/fake-exposure-render", FakeExposureRenderHandler, {'renderer':renderer}),
+                    (r"/fake-exposure-render.html", FakeExposureRenderHandler, {'renderer':renderer}),
                     (r"/gallery.html", GalleryHandler),
-                    (r"/status", StatusHandler,{'cam':cam}),
+                    (r"/status", StatusHandler,{'cam':cam, 'renderer':renderer}),
                     (r"/", IndexHandler),
                     (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),
                 ]
@@ -565,11 +697,13 @@ def start_application():
 
     cam = CameraCfg()
 
+    renderer = PhotoRenderer()
+
     cam.load_settings('settings.cfg')
 
 
     app = Application(
-                        cam,
+                        cam, renderer,
                         template_path=os.path.join(os.path.dirname(__file__), 'templates'),
                         static_path=stat_dir,
                         debug = args.debug,

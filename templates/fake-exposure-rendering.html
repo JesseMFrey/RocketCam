@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Fake long exposure dashboard.">
+    <title>Render Progress</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+    <script src = "{{ static_url("jquery-3.6.0.min.js") }}"></script>
+</head>
+<body>
+    <div class=container">
+        <div id="content" class="center">
+            <h1>Rendering Image</h1>
+            <div>
+                <label for="render-bar" id="render-label"></label><br>
+                <progress id="render-bar" value="0" max="100"></progress>
+            </div>
+        </div>
+    </div>
+
+<script type="text/javascript">
+        setInterval(function() {
+        $.getJSON("/status?type=renderer",function(data){
+            console.log(data)
+            bar = document.getElementById("render-bar");
+            label = document.getElementById("render-label");
+            //set default status string
+            status_str = data.opp;
+            switch (data.opp)
+            {
+                case "Processing" : 
+                    status_str = `Processing frame ${data.frame}`;
+                    bar.value = data.frame;
+                    //TODO : do this better, need number of frames
+                    bar.max = data.frame + 100;
+                    break;
+                case "Averaging" :
+                    status_str = `Averaging ${data.num} of ${data.denom}`;
+                    bar.value = data.num;
+                    bar.max = data.denom;
+                    break;
+                case "Starting" :
+                    bar.value = 0;
+                    bar.max = 100;
+                    break;
+                case "Loading" :
+                    bar.value = 0;
+                    bar.max = 10;
+                    break;
+                case "Scaling values" :
+                    bar.value = 0;
+                    bar.max = 80;
+                    break;
+                case "Encoding image" :
+                    bar.value = 0;
+                    bar.max = 90;
+                    break;
+                case "Writing" :
+                    bar.value = 0;
+                    bar.max = 99;
+                    break;
+                case "Complete" :
+                    bar.value = 0;
+                    bar.max = 100;
+                    break;
+            }
+            label.innerHTML = status_str;
+            if(data.opp == "Complete")
+            {
+                //reload new page
+                //TODO : make this an actual page rather than just the image?
+                window.location.assign("/pictures/{{ out_name }}");
+            }
+        });
+        }, 100);
+</script>
+
+</body>

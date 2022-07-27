@@ -11,7 +11,7 @@
 <body>
     <div class=container">
         <div id="content" class="center">
-            <div>
+            <div class="section">
                 <h1>Video Preview</h1>
                 <p>
                     <video width="320" height="240" controls>
@@ -20,10 +20,28 @@
                     </video> 
                 </p>
                 <p>
+                Use the <a href="fake-exposure-settings.html?vid={{ raw_url }}">fake long exposure tool</a> to create fake long exposure night photos.
+                {% if stills %}
+                    Prevously generated long exposure photos are shown below.
+                {% end %}
+                </p>
+                <p>
                 Download the video in <a href="{{ raw_url }}" download>raw</a> or <a href="{{ vid_url }}" download>containerized</a> format.
                 </p>
             </div>
-            <div>
+            {% if stills %}
+            <div class="section">
+                <h2>Fake Long Exposure Photos</h2>
+                <span>
+                {% for s in stills %}
+                    <div class="fexp-gallery">
+                        <img class="fexp-gallery" src="{{ s }}"/>
+                    </div>
+                {% end %}
+                </span>
+            </div>
+            {% end %}
+            <div class="section">
                 <a href="settings.html">settings</a>
                 <a href="index.html">main page</a>
                 <a href="gallery.html">gallery</a>

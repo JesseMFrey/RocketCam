@@ -12,6 +12,29 @@ div.gallery {
     padding-bottom: 2mm;
 }
 
+img.fexp-gallery {
+    max-width : 100%;
+}
+
+div.section{
+    width : 90%;
+    margin-left : 5%;
+    margin-right : 5%;
+    height : auto;
+    margin-top : 4mm;
+    margin-bottom : 4mm;
+}
+
+div.fexp-gallery {
+    float: left;
+    display : block;
+    max-width : 10cm;
+    padding-right: 1em;
+    padding-left: 1em;
+    padding-top: 2mm;
+    padding-bottom: 2mm;
+}
+
 .footer {
     width: 100%;
     min-width: 100%;

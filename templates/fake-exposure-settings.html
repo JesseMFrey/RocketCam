@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Fake long exposure dashboard.">
+    <title>Long Exposure Faker</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+</head>
+<body>
+    <div class=container">
+        <div id="content" class="center">
+            <h1>Fake Long Exposure</h1>
+            <div>
+                <form action="/fake-exposure-render.html" method="get">
+                    <input type="hidden" name="vid" value="{{ src_url }}">
+                    <div class="frame-preview">
+                        <img/>
+                        <p>
+                        <label for="start">Start frame :</label>
+                        <input type="range" name="start" id="start">
+                        </p>
+                    </div>
+                    <div class="frame-preview">
+                        <img/>
+                        <p>
+                        <label for="end">End Frame :</label>
+                        <input type="range" name="end" id="end">
+                        </p>
+                    </div>
+                    <input type="submit" value="Render" title="Render Fake long exposure photo">
+                </form>
+            </div>
+            <div class="footer">
+                <a href="index.html">main page</a>
+                <a href="settings.html">settings</a>
+                <a href="gallery.html">gallery</a>
+            </div>
+        </div>
+    </div>
+</body>
