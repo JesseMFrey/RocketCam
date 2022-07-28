@@ -163,8 +163,13 @@ class PhotoRenderer:
                 if line:
                     print(f'Unknown line from renderer : "{line}"')
 
-        #render complete, update status
-        self.status = {'opp' : 'Complete'}
+        if self.pipe.returncode ==0:
+            #render complete, update status
+            self.status = {'opp' : 'Complete'}
+        else:
+            #render complete, update status
+            self.status = {'opp' : 'An Error occured'}
+
 
     def start(self, in_name, out_name):
 
