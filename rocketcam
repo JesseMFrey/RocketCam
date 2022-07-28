@@ -21,8 +21,8 @@ import tornado.web
 
 iso_list = (100, 200, 320, 400, 500, 640, 800)
 
-stat_dir = os.path.join(os.path.dirname(__file__), 'static')
-img_dir = os.path.join(os.path.dirname(__file__), 'pictures')
+stat_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), 'static'))
+img_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), 'pictures'))
 img_url = 'pictures/'
 #img_dir  = os.path.join(os.path.expanduser('~'),'Pictures')
 #name for image files
@@ -427,7 +427,7 @@ class FakeExposureRenderHandler(tornado.web.RequestHandler):
             self.redirect(r'/gallery.html')
         else:
 
-            vid_path = os.path.join(img_dir, os.path.relpath(vid_url, '/'+img_url))
+            vid_path = os.path.normpath(os.path.join(img_dir, os.path.relpath(vid_url, '/'+img_url)))
 
             if not os.path.exists(vid_path):
                 raise RuntimeError(f'Video path "{vid_path}" does not exist')
