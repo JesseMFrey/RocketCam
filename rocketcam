@@ -171,17 +171,27 @@ class PhotoRenderer:
             self.status = {'opp' : 'An Error occured'}
 
 
-    def start(self, in_name, out_name):
+    def start(self, in_name, out_name, **kwargs):
 
         if self.is_running():
             raise RuntimeError('A render is already running')
 
+        #format kwargs into extra arguments
+        extra_args = []
+        for arg,val in kwargs.items():
+            extra_args.append('--' + arg)
+            extra_args.append(str(val))
+
+
         self.status = {'opp' : 'Starting'}
+        #construct args
+        args = [sys.executable,
+                  '-m', 'fakelongexposure', 
+                  '--progress',
+                  f'--output={out_name}', in_name] + extra_args
+
         # start rendering
-        self.pipe = subprocess.Popen([sys.executable,
-                                      '-m', 'fakelongexposure', 
-                                      '--progress',
-                                      f'--output={out_name}', in_name],
+        self.pipe = subprocess.Popen( args,
                                       universal_newlines=True,
                                       bufsize=1,
                                       stdin=subprocess.DEVNULL,
@@ -432,9 +442,9 @@ class FakeExposureRenderHandler(tornado.web.RequestHandler):
             if not os.path.exists(vid_path):
                 raise RuntimeError(f'Video path "{vid_path}" does not exist')
 
-            fcount = 1
             start = self.get_argument('start', default=0)
             end = self.get_argument('end', default='last')
+            fcount  = self.get_argument('fcount', default=1)
 
             _, tail = os.path.split(vid_path)
             name, _ = os.path.splitext(tail)
@@ -442,7 +452,7 @@ class FakeExposureRenderHandler(tornado.web.RequestHandler):
             out_name = f'{name}_longexp_f{fcount}_s{start}_e{end}.png'
             out_path = os.path.join(img_dir, out_name)
 
-            self.renderer.start(vid_path, out_path)
+            self.renderer.start(vid_path, out_path, fcount=fcount)
 
             self.render(r'fake-exposure-rendering.html', out_name=out_name)
 
