@@ -19,6 +19,7 @@
                         <p>
                         <label for="start">Start frame :</label>
                         <input type="range" name="start" id="start" value="1" max="{{ max_frames }}">
+                        <output for="start" id="start_num" style="width: 6em;font-family: monospace;">
                         </p>
                     </div>
                     <div class="frame-preview">
@@ -26,11 +27,13 @@
                         <p>
                         <label for="end">End Frame :</label>
                         <input type="range" name="end" id="end" value="{{ max_frames }}" max="{{ max_frames }}">
+                        <output for="end" id="end_num" style="width: 6em;font-family: monospace;">
                         </p>
                     </div>
                     <p>
                         <label for="fcount">Average number :</label>
                         <input type="range" name="fcount" id="fcount" value="1" max="40">
+                        <output for="fcount" id="fcount_num" style="width: 6em;font-family: monospace;">
                     </p>
                     <input type="submit" value="Render" title="Render Fake long exposure photo">
                 </form>
@@ -42,4 +45,21 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function link_output(n)
+        {
+            var range = document.getElementById(n);
+            var output = document.getElementById(n + '_num');
+            //set initial value
+            output.value = range.value;
+
+            range.addEventListener('input', function (e) {
+              output.value = e.target.value;
+            });
+        }
+        link_output('fcount');
+        link_output('start');
+        link_output('end');
+    </script>
 </body>
