@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import asyncio
 import configparser
 import cv2
 import datetime
@@ -277,6 +278,35 @@ def get_long_exp_urls(num):
 
     return urls
 
+
+framecount_args = [sys.executable, os.path.join(os.path.dirname(__file__), 'framecount')]
+
+framecount_cache = {}
+
+async def count_frames(fname):
+
+    #check if there is a value in the dict
+    if fname in framecount_cache:
+        return framecount_cache[fname]
+
+    # value not found, start dubprocess to calculate
+    proc = await asyncio.subprocess.create_subprocess_exec(*framecount_args, fname,
+                                             stdout=asyncio.subprocess.PIPE)
+
+    (output, error) = await proc.communicate()
+
+    if proc.returncode:
+        raise RuntimeError('Framecount failed')
+
+    m = re.match(r'(?P<frames>\d+) frames in file', output.decode())
+
+    if m:
+        #save value in the cache
+        framecount_cache[fname] = int(m.group('frames'))
+        #return value
+        return framecount_cache[fname]
+    else:
+        raise RuntimeError(f'Error parsing framecount output : "{output.decode()}"')
 
 def find_capture_files():
     files = os.listdir(img_dir)
