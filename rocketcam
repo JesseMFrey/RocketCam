@@ -180,7 +180,11 @@ class PhotoRenderer:
         #format kwargs into extra arguments
         extra_args = []
         for arg,val in kwargs.items():
+            #replace underscores with dashes
+            arg = arg.replace('_','-')
+            #add arg name
             extra_args.append('--' + arg)
+            #add arg value
             extra_args.append(str(val))
 
 
@@ -442,7 +446,7 @@ class VideoDispHandler(tornado.web.RequestHandler):
                 self.redirect(r'/gallery.html')
 
 class FakeExposureSettingsHandler(tornado.web.RequestHandler):
-    def get(self):
+    async def get(self):
         vid_url = self.get_argument('vid', default=None)
 
         if vid_url is None:
@@ -454,13 +458,16 @@ class FakeExposureSettingsHandler(tornado.web.RequestHandler):
             if not os.path.exists(vid_path):
                 raise RuntimeError(f'Video path "{vid_path}" does not exist')
 
-            self.render(r'fake-exposure-settings.html', src_url=vid_url)
+            #get the number of frames in the video
+            vid_frames = await count_frames(vid_path)
+
+            self.render(r'fake-exposure-settings.html', src_url=vid_url, max_frames=vid_frames)
 
 class FakeExposureRenderHandler(tornado.web.RequestHandler):
     def initialize(self, renderer):
         self.renderer = renderer
 
-    def get(self):
+    async def get(self):
         vid_url = self.get_argument('vid', default=None)
 
         if vid_url is None:
@@ -472,9 +479,16 @@ class FakeExposureRenderHandler(tornado.web.RequestHandler):
             if not os.path.exists(vid_path):
                 raise RuntimeError(f'Video path "{vid_path}" does not exist')
 
+            #get the number of frames in the video
+            vid_frames = await count_frames(vid_path)
+
             start = self.get_argument('start', default=0)
-            end = self.get_argument('end', default='last')
+            end = self.get_argument('end', vid_frames)
             fcount  = self.get_argument('fcount', default=1)
+
+            #make sure that there are frames that get used
+            if start >= end:
+                raise RuntimeError('Start frame must be lower than end frame')
 
             _, tail = os.path.split(vid_path)
             name, _ = os.path.splitext(tail)
@@ -482,9 +496,9 @@ class FakeExposureRenderHandler(tornado.web.RequestHandler):
             out_name = f'{name}_longexp_f{fcount}_s{start}_e{end}.png'
             out_path = os.path.join(img_dir, out_name)
 
-            self.renderer.start(vid_path, out_path, fcount=fcount)
+            self.renderer.start(vid_path, out_path, fcount=fcount, start_frame=start, end_frame=end)
 
-            self.render(r'fake-exposure-rendering.html', out_name=out_name)
+            self.render(r'fake-exposure-rendering.html', out_name=out_name, frames=vid_frames)
 
 def img_num(n):
     m = re.match('IMG_(?P<num>[0-9]+)', n)

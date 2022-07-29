@@ -30,10 +30,10 @@
             switch (data.opp)
             {
                 case "Processing" : 
-                    status_str = `Processing frame ${data.frame}`;
+                        status_str = `Processing frame ${data.frame} of {{ frames }}`;
                     bar.value = data.frame;
                     //TODO : do this better, need number of frames
-                    bar.max = data.frame + 100;
+                        bar.max = {{ frames }};
                     break;
                 case "Averaging" :
                     status_str = `Averaging ${data.num} of ${data.denom}`;
