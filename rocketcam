@@ -47,15 +47,11 @@ class CameraCfg:
         self.rec_name = None
 
     def take_picture(self, name):
-        #TESTING : print name
-        print(f'Capturing picture {name}')
         #capture picture
         #TODO : add choice of format
         self.camera.capture(name,format='jpeg')
     
     def start_recording(self, name):
-        #TESTING : print name
-        print(f'Starting recording to {name}')
         #flag that we are recording
         self.recording = True
         #set recording name
@@ -66,8 +62,6 @@ class CameraCfg:
         self.rec_start_time = time.time()
         
     def stop_recording(self):
-        #TESTING : print message
-        print('Stopping video recording')
         #flag that we are not recording
         self.recording = False
         #clear start time
@@ -416,8 +410,6 @@ class ImageDispHandler(tornado.web.RequestHandler):
 
                 jpg_url = jpg_name
 
-                print(f'Image path name : {jpg_url}')
-
                 self.render('image.html',img_url=jpg_url)
             else:
                 #TODO : give some sort of error here?
@@ -434,8 +426,6 @@ class VideoDispHandler(tornado.web.RequestHandler):
             self.redirect(r'/gallery.html')
         else:
             url = get_vid_urls(int(vid_num))
-
-            print(f'get_vid_urls returned : {url}')
 
             lexp_urls = get_long_exp_urls(vid_num)
 
@@ -560,14 +550,10 @@ class GalleryHandler(tornado.web.RequestHandler):
         #generate thumbnails
         generate_thumbnails(file_dict)
 
-        #print(f'file_dict : {file_dict}')
-
         #get list of image names
         img_lst = list(file_dict.keys())
         #sort list
         img_lst.sort(key=img_num)
-
-        #print(f'img_lst : {img_lst}')
 
         img_urls = []
         for img in img_lst:
@@ -663,8 +649,6 @@ class SettingsHandler(tornado.web.RequestHandler):
                    )
 
     def post(self):
-        #print(self.request.body)
-
         #get action
         action = self.get_body_argument('action')
 
@@ -673,19 +657,16 @@ class SettingsHandler(tornado.web.RequestHandler):
         self.cam.capture_type =  self.get_body_argument('capture-type')
         #get ISO
         iso = int(self.get_body_argument('iso'))
-        print(f'Setting ISO to : {iso}')
         #set ISO
         self.cam.camera.iso = iso
 
         #get mode
         mode = int(self.get_body_argument('mode'))
-        print(f'Setting sensor mode to : {mode}')
         #set mode
         self.cam.camera.sensor_mode = mode
 
         #get AWB mode
         awb_mode = self.get_body_argument('awb_mode')
-        print(f'Setting AWB mode to : {awb_mode}')
         #set mode
         self.cam.camera.awb_mode = awb_mode
 
@@ -700,14 +681,12 @@ class SettingsHandler(tornado.web.RequestHandler):
 
         #get shutter speed
         shutter = float(self.get_body_argument('shutter'))
-        print(f'Setting shutter speed to : {shutter}')
         #set shutter speed
         self.cam.camera.shutter_speed = int(shutter)
 
         #get frame rate
         frame_r = float(self.get_body_argument('frame_r'))
         frame = fractions.Fraction(frame_r)
-        print(f'Setting frame rate to : {frame}')
         #set frame rate
         self.cam.camera.framerate = frame
 
