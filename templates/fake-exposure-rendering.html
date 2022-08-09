@@ -68,9 +68,8 @@
             label.innerHTML = status_str;
             if(data.opp == "Complete")
             {
-                //reload new page
-                //TODO : make this an actual page rather than just the image?
-                window.location.assign("/pictures/{{ out_name }}");
+                //reload long exposure page
+                window.location.assign("/long-exposure-disp.html?name={{ out_name }}");
             }
         });
         }, 100);

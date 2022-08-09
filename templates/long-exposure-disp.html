@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="description" content="Rendered long exposure picture.">
+    <title>{{ name }}</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+</head>
+<body>
+    <div class="container">
+        <div id="content" class="center">
+            <div>
+                <h1>{{ name }}</h1>
+                <p>
+                    <img class="preview" src="/pictures/{{ name }}" alt="Captured image">
+                </p>
+            </div>
+            <div>
+                <a href="settings.html">settings</a>
+                <a href="gallery.html">gallery</a>
+                <a href="fake-exposure-settings.html?vid={{ f'/pictures/IMG_{vid_num}.h264' }}">back to renderer</a>
+                <a href="vidpreview.html?vid={{ vid_num }}">view video</a>
+            </div>
+        </div>
+    </div>
+</body>

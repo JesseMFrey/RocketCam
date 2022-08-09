@@ -276,8 +276,12 @@ def get_long_exp_urls(num):
     urls = []
     for f in files:
         _, f = os.path.split(f)
-        url = img_url + f
-        urls.append(url)
+
+        #link to landing page
+        url_p = '/long-exposure-disp.html?name=' + f
+        #link to image
+        url_i = img_url + f
+        urls.append((url_i,url_p))
 
 
     return urls
@@ -499,6 +503,25 @@ class FakeExposureRenderHandler(tornado.web.RequestHandler):
             self.renderer.start(vid_path, out_path, fcount=fcount, start_frame=start, end_frame=end)
 
             self.render(r'fake-exposure-rendering.html', out_name=out_name, frames=vid_frames)
+
+#handler for rendered fake long exposure pictures
+class LongExposureHandler(tornado.web.RequestHandler):
+    def initialize(self):
+        pass
+
+    def get(self):
+        pict_name = self.get_argument('name', default=None)
+
+        if pict_name is None:
+            self.redirect(r'/gallery.html')
+        else:
+
+            num = img_num(pict_name)
+
+            if num == -1:
+                raise RuntimeError(f'Unable to determine picture number from "{pict_name}"')
+
+            self.render(r'long-exposure-disp.html', name=pict_name, vid_num=num)
 
 def img_num(n):
     m = re.match('IMG_(?P<num>[0-9]+)', n)
@@ -723,6 +746,7 @@ class Application(tornado.web.Application):
                     (r"/fake-exposure-settings", FakeExposureSettingsHandler),
                     (r"/fake-exposure-render", FakeExposureRenderHandler, {'renderer':renderer}),
                     (r"/fake-exposure-render.html", FakeExposureRenderHandler, {'renderer':renderer}),
+                    (r"/long-exposure-disp.html", LongExposureHandler ),
                     (r"/gallery.html", GalleryHandler),
                     (r"/status", StatusHandler,{'cam':cam, 'renderer':renderer}),
                     (r"/", IndexHandler),
