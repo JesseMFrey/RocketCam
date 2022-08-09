@@ -704,8 +704,7 @@ class SettingsHandler(tornado.web.RequestHandler):
         elif action == 'Save':
             #save settings to file
             self.cam.save_settings('settings.cfg')
-
-            self.redirect(r'/')
+            self.redirect(r'/settings.html')
         else:
             raise RuntimeError(f'Unknown action "{action}"')
 
