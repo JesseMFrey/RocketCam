@@ -18,7 +18,7 @@
                         <img/>
                         <p>
                         <label for="start">Start frame :</label>
-                        <input type="range" name="start" id="start" value="1" max="{{ max_frames }}">
+                        <input type="range" name="start" id="start" value="{{ start }}" max="{{ max_frames }}">
                         <output for="start" id="start_num" style="width: 6em;font-family: monospace;">
                         </p>
                     </div>
@@ -26,13 +26,13 @@
                         <img/>
                         <p>
                         <label for="end">End Frame :</label>
-                        <input type="range" name="end" id="end" value="{{ max_frames }}" max="{{ max_frames }}">
+                        <input type="range" name="end" id="end" value="{{ end }}" max="{{ max_frames }}">
                         <output for="end" id="end_num" style="width: 6em;font-family: monospace;">
                         </p>
                     </div>
                     <p>
                         <label for="fcount">Average number :</label>
-                        <input type="range" name="fcount" id="fcount" value="1" min="1" max="40">
+                        <input type="range" name="fcount" id="fcount" value="{{ fcount }}" min="1" max="40">
                         <output for="fcount" id="fcount_num" style="width: 6em;font-family: monospace;">
                     </p>
                     <input type="submit" value="Render" title="Render Fake long exposure photo">

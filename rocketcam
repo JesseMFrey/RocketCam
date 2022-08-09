@@ -465,7 +465,11 @@ class FakeExposureSettingsHandler(tornado.web.RequestHandler):
             #get the number of frames in the video
             vid_frames = await count_frames(vid_path)
 
-            self.render(r'fake-exposure-settings.html', src_url=vid_url, max_frames=vid_frames)
+            start = self.get_argument('start', default=0)
+            end = self.get_argument('end', default=vid_frames)
+            fcount  = self.get_argument('fcount', default=1)
+
+            self.render(r'fake-exposure-settings.html', src_url=vid_url, max_frames=vid_frames, start=start, end=end, fcount=fcount)
 
 class FakeExposureRenderHandler(tornado.web.RequestHandler):
     def initialize(self, renderer):
@@ -504,6 +508,21 @@ class FakeExposureRenderHandler(tornado.web.RequestHandler):
 
             self.render(r'fake-exposure-rendering.html', out_name=out_name, frames=vid_frames)
 
+def lexp_params(n):
+    '''
+    Extract parameters from long exposure file name.
+    '''
+    m = re.match('IMG_(?P<num>[0-9]+)_longexp_f(?P<fcount>\d+)_s(?P<start>\d+)_e(?P<end>\d+)', n)
+
+    if m:
+        params = m.groupdict()
+
+        for k, v in params.items():
+            params[k] = int(v)
+        return params
+    else:
+        return -1
+
 #handler for rendered fake long exposure pictures
 class LongExposureHandler(tornado.web.RequestHandler):
     def initialize(self):
@@ -516,12 +535,14 @@ class LongExposureHandler(tornado.web.RequestHandler):
             self.redirect(r'/gallery.html')
         else:
 
-            num = img_num(pict_name)
+            lp = lexp_params(pict_name)
 
-            if num == -1:
+            if lp == -1:
                 raise RuntimeError(f'Unable to determine picture number from "{pict_name}"')
 
-            self.render(r'long-exposure-disp.html', name=pict_name, vid_num=num)
+            url = f'/fake-exposure-settings.html?vid=/pictures/IMG_{lp["num"]}.h264&fcount={lp["fcount"]}&start={lp["start"]}&end={lp["end"]}'
+
+            self.render(r'long-exposure-disp.html', name=pict_name, vid_num=lp['num'], render_url=url)
 
 def img_num(n):
     m = re.match('IMG_(?P<num>[0-9]+)', n)
