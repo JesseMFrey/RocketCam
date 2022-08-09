@@ -45,8 +45,6 @@ class CameraCfg:
         self.capture_type = 'video'
         self.rec_start_time = None
         self.rec_name = None
-        #time.sleep(30)
-        #print('Camera ready!')
 
     def take_picture(self, name):
         #TESTING : print name
