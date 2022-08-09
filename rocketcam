@@ -603,18 +603,10 @@ class SettingsHandler(tornado.web.RequestHandler):
             self.redirect(r'/video.html')
             return
 
-        frame = self.cam.camera.framerate
-
-        #divide numerator into denominator
-        new_d, rem = divmod(frame.denominator, frame.numerator)
-
-        #check if remainder is small
-        if rem < frame.denominator *1e-3:
-            #make new fraction
-            frame = fractions.Fraction(1, new_d)
+        frame_r = float(self.cam.camera.framerate)
 
         #get shutter speed
-        shutter = round(self.cam.camera.shutter_speed*1e-6, 6)
+        shutter = round(self.cam.camera.shutter_speed, 6)
 
         self.render('settings.html',
                         capture_type=self.cam.capture_type, 
@@ -623,8 +615,7 @@ class SettingsHandler(tornado.web.RequestHandler):
                         mode=self.cam.camera.sensor_mode,
                         shutter=shutter,
                         resolution=self.cam.camera.resolution,
-                        frame_d=frame.denominator,
-                        frame_n=frame.numerator,
+                        frame_r=frame_r,
                         awb_mode=self.cam.camera.awb_mode,
                         awb_gain=self.cam.camera.awb_gains,
                    )
@@ -669,12 +660,11 @@ class SettingsHandler(tornado.web.RequestHandler):
         shutter = float(self.get_body_argument('shutter'))
         print(f'Setting shutter speed to : {shutter}')
         #set shutter speed
-        self.cam.camera.shutter_speed = int(shutter*1e6)
+        self.cam.camera.shutter_speed = int(shutter)
 
         #get frame rate
-        frame_n = int(self.get_body_argument('frame_n'))
-        frame_d = int(self.get_body_argument('frame_d'))
-        frame = fractions.Fraction(frame_n, frame_d)
+        frame_r = float(self.get_body_argument('frame_r'))
+        frame = fractions.Fraction(frame_r)
         print(f'Setting frame rate to : {frame}')
         #set frame rate
         self.cam.camera.framerate = frame

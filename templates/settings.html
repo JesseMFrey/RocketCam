@@ -31,7 +31,7 @@
                     </p>
                     <p>
                         <label for="shutter">Shutter speed : </label>
-                        <input name="shutter" type="number" id="shutter" value="{{shutter}}" min="0" max="30" step="1e-6">
+                        <input name="shutter" type="number" id="shutter" value="{{shutter}}" min="0" max="30e6" step="1"> &sol;1000000 seconds
                     </p>
                     <p>
                         <label for="iso">ISO : </label>
@@ -58,10 +58,9 @@
                         </select>
                     </p>
                     <p>
-                        <label for="frame_n">Frame rate : </label>
-                        <input type="number" name="frame_n" id="frame_n" value="{{frame_n}}" min="1" max="1000000">
-                        &sol;
-                        <input type="number" name="frame_d" id="frame_d" value="{{frame_d}}" min="1" max="100000">
+                        <label for="frame_r">Frame rate : </label>
+                        <input type="number" name="frame_r" id="frame_r" value="{{frame_r}}" min="1" max="120">
+                        &sol;second
                     </p>
                     <p>
                         <label for="res">Image resolution : </label>
