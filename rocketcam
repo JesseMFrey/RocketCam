@@ -15,7 +15,6 @@ import picamera
 import re
 import subprocess
 import sys
-import time
 import tornado.escape
 import tornado.ioloop
 import tornado.web
@@ -43,7 +42,6 @@ class CameraCfg:
         self.camera.iso = 800
         self.recording = False
         self.capture_type = 'video'
-        self.rec_start_time = None
         self.rec_name = None
 
     def take_picture(self, name):
@@ -58,14 +56,10 @@ class CameraCfg:
         self.rec_name = name
         #start recording
         self.camera.start_recording(name)
-        #save start time
-        self.rec_start_time = time.time()
         
     def stop_recording(self):
         #flag that we are not recording
         self.recording = False
-        #clear start time
-        self.rec_start_time = None
         #clear file name
         file = self.rec_name
         self.rec_name = None
@@ -73,12 +67,6 @@ class CameraCfg:
         self.camera.stop_recording()
         #return file name
         return file
-
-    def get_rec_time(self):
-        if not self.recording or not self.rec_start_time:
-            return None
-        #return elapsed time in seconds
-        return self.rec_start_time - time.time()
 
     def save_settings(self, file):
         config = configparser.ConfigParser()
