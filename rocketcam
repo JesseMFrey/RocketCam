@@ -45,17 +45,25 @@ class CameraCfg:
         self.rec_name = None
 
     def take_picture(self, name):
+        #get settings name
+        set_name = os.path.splitext(name)[0] + '.cfg'
         #capture picture
         #TODO : add choice of format
         self.camera.capture(name,format='jpeg')
+        #save settings
+        self.save_settings(set_name)
     
     def start_recording(self, name):
+        #get settings name
+        set_name = os.path.splitext(name)[0] + '.cfg'
         #flag that we are recording
         self.recording = True
         #set recording name
         self.rec_name = name
         #start recording
         self.camera.start_recording(name)
+        #save settings
+        self.save_settings(set_name)
         
     def stop_recording(self):
         #flag that we are not recording
@@ -81,27 +89,49 @@ class CameraCfg:
             attr = getattr(self.camera, s)
             config['camera'][s] = str(attr)
 
-        # path is relative too executable
-        path = os.path.join(os.path.dirname(__file__), file)
-
-        with open(path,'wt') as fp:
+        with open(file,'wt') as fp:
             config.write(fp)
 
-    def load_settings(self,file):
+    @staticmethod
+    def load_settings(file):
 
         #skip if file does not exist
         if not os.path.exists(file):
-            return
+            return {}
 
         config = configparser.ConfigParser()
 
         config.read(file)
 
+        settings = {}
+
+        settings['DEFAULT'] = {}
+        for s, convert_fcn in CameraCfg.main_settings.items():
+            settings['DEFAULT'][s] =  convert_fcn(config['DEFAULT'][s])
+
+        settings['camera'] = {}
+        for s, convert_fcn in CameraCfg.camera_settings.items():
+            settings['camera'][s] = convert_fcn(config['camera'][s])
+
+        return settings
+
+    def restore_settings(self,file):
+
+        # path is relative to executable
+        set_path = os.path.join(os.path.dirname(__file__), file)
+
+        #read settings from file
+        settings = self.load_settings(set_path)
+
+        #if file could not be read, exit now
+        if not settings:
+            return
+
         for s, convert_fcn in self.main_settings.items():
-            setattr(self, s, convert_fcn(config['DEFAULT'][s]))
+            setattr(self, s, convert_fcn(settings['DEFAULT'][s]))
 
         for s, convert_fcn in self.camera_settings.items():
-            setattr(self.camera, s, convert_fcn(config['camera'][s]))
+            setattr(self.camera, s, convert_fcn(settings['camera'][s]))
 
     def frame_info(self):
         try:
@@ -711,8 +741,11 @@ class SettingsHandler(tornado.web.RequestHandler):
             else:
                 raise RuntimeError(f'Unknown capture_type "{self.cam.capture_type}"')
         elif action == 'Save':
+
+            # path is relative to executable
+            set_path = os.path.join(os.path.dirname(__file__), 'settings.cfg')
             #save settings to file
-            self.cam.save_settings('settings.cfg')
+            self.cam.save_settings(set_path)
             self.redirect(r'/settings.html')
         else:
             raise RuntimeError(f'Unknown action "{action}"')
@@ -757,7 +790,8 @@ def start_application():
 
     renderer = PhotoRenderer()
 
-    cam.load_settings('settings.cfg')
+    # restore settings from file
+    cam.restore_settings('settings.cfg')
 
 
     app = Application(
