@@ -257,19 +257,29 @@ def get_img_urls(num):
         return None
 
 def get_vid_urls(num):
-    #TODO: needs a lot of work here. probably needs to convert to a container format to be useable.
-    raw = name_fmt.format(num=num) + '.h264'
+    #format base filename
+    base_name = name_fmt.format(num=num) 
+    #generate "raw" video name
+    raw = base_name + '.h264'
     raw_path = os.path.join(img_dir, raw)
     #get converted path
-    name = name_fmt.format(num=num) + '.mp4'
+    name = base_name + '.mp4'
     vid_path = os.path.join(img_dir, name)
+    #get settings
+    set_path = os.path.join(img_dir, base_name + '.cfg')
+    settings = CameraCfg.load_settings(set_path)
     if os.path.exists(raw_path):
         raw_url = '/' + img_url + raw
         vid_url = '/' + img_url + name
         #check if containerized video exists
         if not os.path.exists(vid_path):
+            # if settings were found, add framerate options
+            if settings:
+                fr_opt = ['-framerate', str(float(settings['camera']['framerate']))]
+            else:
+                fr_opt = []
             #create containerized format with ffmpeg
-            cp = subprocess.run(['ffmpeg', '-nostdin', '-probesize', '10M', '-i', raw_path, '-c:v', 'copy', '-f', 'mp4', vid_path])
+            cp = subprocess.run(['ffmpeg', '-nostdin', '-probesize', '10M'] + fr_opt + ['-i', raw_path, '-c:v', 'copy', '-f', 'mp4', vid_path])
 
             if cp.returncode:
                 #there was an error
