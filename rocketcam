@@ -394,14 +394,18 @@ class StatusHandler(tornado.web.RequestHandler):
         stat_type = self.get_argument('type', default='frame')
 
         if stat_type == 'frame':
-            info = self.cam.frame_info()
+            resp = ''
+            while not resp:
+                info = self.cam.frame_info()
 
-            if info:
-                ftime = datetime.timedelta(microseconds=info.timestamp)
-                resp = json.dumps({'recording': True, 'index': info.index, 'timestamp': info.timestamp, 'time': str(ftime)})
-            else:
-                #no frame info, fill in dummy values
-                resp = json.dumps({'recording': False, 'index': 0, 'timestamp': ''})
+                if info:
+                    if info.timestamp is None:
+                        continue
+                    ftime = datetime.timedelta(microseconds=info.timestamp)
+                    resp = json.dumps({'recording': True, 'index': info.index, 'timestamp': info.timestamp, 'time': str(ftime)})
+                else:
+                    #no frame info, fill in dummy values
+                    resp = json.dumps({'recording': False, 'index': 0, 'timestamp': ''})
         elif stat_type == 'renderer':
             info = self.renderer.status
 
