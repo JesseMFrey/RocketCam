@@ -79,13 +79,6 @@ div.fexp-gallery {
     height: auto;
 }
 
-/* Use a media query to add a breakpoint at 800px: */
-@media screen and (max-width: 800px) {
-  .left, .main, .right {
-    width: 100%; /* The width is 100%, when the viewport is 800px or smaller */
-  }
-}
-
 .column {
     float: left;
 }
@@ -181,3 +174,35 @@ a:hover {
 a:active {
   color: #ea80fc;
 } 
+
+.frame-preview {
+    max-width: 100%;
+}
+
+img.frame-preview, img.preview {
+    max-width: 90%;
+    max-width: 90%;
+}
+
+/* Use a media query to add a breakpoint at 800px: */
+@media screen and (max-width: 800px) {
+  .left, .right {
+    width: 0%; 
+  }
+  .main, .center {
+    width: 95%; /* The width is 100%, when the viewport is 800px or smaller */
+    max-width: 95%; 
+  }
+  .center {
+    padding: 3px;
+  }
+  video {
+      max-width: 100%;
+  }
+
+  h1.file-name {
+      /* filenames are long, so make them a little small */
+      font-size: 1em;
+  }
+}
+
