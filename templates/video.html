@@ -24,7 +24,14 @@
 <script type="text/javascript">
         setInterval(function() {
         $.getJSON("/status",function(data){
-		document.getElementById("ts").innerHTML = "Timestamp : " + data.time;
+            if(data.recording)
+            {
+                document.getElementById("ts").innerHTML = "Timestamp : " + data.time;
+            }
+            else
+            {
+                document.getElementById("ts").innerHTML = "Containerizing...";
+            }
         });
         }, 100);
 </script>
