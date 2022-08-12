@@ -336,6 +336,56 @@ async def count_frames(fname):
     else:
         raise RuntimeError(f'Error parsing framecount output : "{output.decode()}"')
 
+async def frame_previews(fname, preview_sec = 1):
+
+    #strip extension from file
+    base_name = os.path.splitext(fname)[0]
+
+    #create preview dir name
+    preview_dir = base_name + '_frames' + os.path.sep
+
+    if os.path.isdir(preview_dir):
+        #previews exist, nothing to do
+        # count frames and return (might be cached)
+        return await count_frames(fname)
+
+    #load settings
+    set_name =  base_name + '.cfg'
+    settings = CameraCfg.load_settings(set_name)
+
+    if settings:
+        #get frame rate
+        fr = settings['camera']['framerate']
+    else:
+        #no settings, assume 30 fps
+        fr =30
+
+    # spacing between previews is preview_sec seconds, but minimum of every other frame
+    p_fr = max(2, fr * preview_sec)
+
+    # value not found, start dubprocess to calculate
+    proc = await asyncio.subprocess.create_subprocess_exec(*framecount_args,
+                                             '--preview-interval', str(p_fr),
+                                             '--preview-dest', preview_dir,
+                                             fname,
+                                             stdout=asyncio.subprocess.PIPE)
+
+    (output, error) = await proc.communicate()
+
+    if proc.returncode:
+        raise RuntimeError('Priview generation failed')
+
+    m = re.match(r'(?P<frames>\d+) frames in file', output.decode())
+
+    if m:
+        #save value in the cache
+        framecount_cache[fname] = int(m.group('frames'))
+        #return value
+        return framecount_cache[fname]
+    else:
+        raise RuntimeError(f'Error parsing framecount output : "{output.decode()}"')
+
+
 def find_capture_files():
     files = os.listdir(img_dir)
 
@@ -469,6 +519,51 @@ class VideoDispHandler(tornado.web.RequestHandler):
                 #TODO : give some sort of error here?
                 self.redirect(r'/gallery.html')
 
+class FrameHandler(tornado.web.RequestHandler):
+    def set_default_headers(self):
+        #frames are returned as jpeg images
+        self.set_header("Content-Type", 'image/jpeg')
+
+    def get(self):
+        #get values from request, fail if not present
+        img_base = self.get_argument('img')
+        frame_num = self.get_argument('frame')
+
+        #generate path for image
+        frame_path = os.path.join(img_dir, img_base + '_frames', f'preview_f{frame_num}.jpg')
+
+        if not os.path.exists(frame_path):
+            #requested frame preview does not exits, find closest frame
+            #offset from requesed frame
+            offset = 1
+            #clear frame path, set when complete
+            frame_path = None
+            #convert frame number to int
+            frame_num = int(frame_num)
+            while not frame_path:
+                #frame number for early and late frame by offset
+                early_frame = frame_num - offset
+                late_frame = frame_num + offset
+
+                #early path
+                early_path = os.path.join(img_dir, img_base + '_frames', f'preview_f{early_frame}.jpg')
+                #check if early path exists
+                if os.path.exists(early_path):
+                    frame_path = early_path
+
+                #late path
+                late_path = os.path.join(img_dir, img_base + '_frames', f'preview_f{late_frame}.jpg')
+                #check if late path exists
+                if os.path.exists(late_path):
+                    frame_path = late_path
+
+                #increase the offset
+                offset += 1
+
+        with open(frame_path, 'rb') as fimg:
+            self.write(fimg.read())
+
+
 class FakeExposureSettingsHandler(tornado.web.RequestHandler):
     async def get(self):
         vid_url = self.get_argument('vid', default=None)
@@ -482,14 +577,19 @@ class FakeExposureSettingsHandler(tornado.web.RequestHandler):
             if not os.path.exists(vid_path):
                 raise RuntimeError(f'Video path "{vid_path}" does not exist')
 
-            #get the number of frames in the video
-            vid_frames = await count_frames(vid_path)
 
-            start = self.get_argument('start', default=0)
+            # generate preview images and count frames
+            vid_frames = await frame_previews(vid_path)
+
+            start = self.get_argument('start', default=1)
             end = self.get_argument('end', default=vid_frames)
             fcount  = self.get_argument('fcount', default=1)
 
-            self.render(r'fake-exposure-settings.html', src_url=vid_url, max_frames=vid_frames, start=start, end=end, fcount=fcount)
+            #get base image name (IMG_xx)
+            vid_base = os.path.splitext(vid_url.split('/')[-1])[0]
+
+            self.render(r'fake-exposure-settings.html', src_url=vid_url, max_frames=vid_frames, start=start, end=end, fcount=fcount, base=vid_base)
+
 
 class FakeExposureRenderHandler(tornado.web.RequestHandler):
     def initialize(self, renderer):
@@ -781,6 +881,7 @@ class Application(tornado.web.Application):
                     (r"/fake-exposure-render.html", FakeExposureRenderHandler, {'renderer':renderer}),
                     (r"/long-exposure-disp.html", LongExposureHandler ),
                     (r"/gallery.html", GalleryHandler),
+                    (r"/frame_preview", FrameHandler),
                     (r"/status", StatusHandler,{'cam':cam, 'renderer':renderer}),
                     (r"/", IndexHandler),
                     (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),

@@ -15,7 +15,7 @@
                 <form action="/fake-exposure-render.html" method="get">
                     <input type="hidden" name="vid" value="{{ src_url }}">
                     <div class="frame-preview">
-                        <img/>
+                        <img id="start_frame" class="frame-preview" alt="start frame preview" src="/frame_preview?img={{ base }}&frame={{ start }}"/>
                         <p>
                         <label for="start">Start frame :</label>
                         <input type="range" name="start" id="start" value="{{ start }}" max="{{ max_frames }}">
@@ -23,7 +23,7 @@
                         </p>
                     </div>
                     <div class="frame-preview">
-                        <img/>
+                        <img id="end_frame" class="frame-preview" alt="end frame preview" src="/frame_preview?img={{ base }}&frame={{ end }}"/>
                         <p>
                         <label for="end">End Frame :</label>
                         <input type="range" name="end" id="end" value="{{ end }}" max="{{ max_frames }}">
@@ -61,5 +61,26 @@
         link_output('fcount');
         link_output('start');
         link_output('end');
+
+        function preview_frame(n)
+        {
+            var range = document.getElementById(n);
+            var output = document.getElementById(n + '_frame')
+
+            function set_image(frame)
+            {
+                output.src = `/frame_preview?img={{ base }}&frame=${frame}`
+            }
+            //set initial image
+            set_image(range.value);
+            //add listener to update on change
+
+            range.addEventListener('input', function(e) {
+                set_image(e.target.value);
+            });
+        }
+        //add dynamic preview handlers
+        preview_frame('start');
+        preview_frame('end');
     </script>
 </body>

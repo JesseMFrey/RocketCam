@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import os.path
 
 import cv2 as cv
 
@@ -10,17 +11,47 @@ def main():
 
     parser.add_argument('video', metavar='F',
                         help='Video file to read in.')
+    parser.add_argument('--preview-interval', metavar='I', type=int, default=0,
+                        help='spacing, in frames, between preview images. An interval of zero menas no previews.')
+    parser.add_argument('--preview-height', metavar='H', type=int, default=200,
+                        help='Height of preview images.')
+    parser.add_argument('--preview-dest', metavar='D', default='',
+                        help='Destination folder for preview images, must be set to generate preview images')
 
     args = parser.parse_args()
+
+    if args.preview_interval and not args.preview_dest:
+        raise ValueError('If --preview-interval is non zero, --preview-dest must be set')
+
+    if args.preview_dest:
+        #ensure that destination dir exists
+        os.makedirs(args.preview_dest, exist_ok=True)
 
     cap = cv.VideoCapture(args.video)
     #length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     frames = 0
+    new_shape = None
     while(cap.isOpened()):
-        stat, _ = cap.read()
+        stat, frame = cap.read()
         if not stat:
             break
+
+        #increment frame count
         frames += 1
+
+        #do we write out a preview for this frame?
+        if args.preview_interval and frames % args.preview_interval==0:
+            if not new_shape:
+                old_shape = frame.shape
+                scale = args.preview_height / old_shape[0]
+                new_shape = [round( old_shape[1] * scale),round( old_shape[0] * scale)]
+
+            #resize preview image
+            preview = cv.resize(frame, new_shape)
+            fname = os.path.join(args.preview_dest, f'preview_f{frames}.jpg')
+            #write preview image
+            cv.imwrite(fname, preview)
+
     print(f'{frames} frames in file')
 
 if __name__ == '__main__':
