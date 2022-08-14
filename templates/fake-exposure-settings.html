@@ -66,9 +66,12 @@
             //set initial value
             output.value = range.value;
 
-            range.addEventListener('input', function (e) {
+            function update_output(e) {
               output.value = e.target.value;
-            });
+            }
+
+            range.addEventListener('input', update_output);
+            range.addEventListener('change', update_output);
         }
         link_output('fcount');
         link_output('start');
@@ -87,9 +90,12 @@
             set_image(range.value);
             //add listener to update on change
 
-            range.addEventListener('input', function(e) {
+            function update_preview(e) {
                 set_image(e.target.value);
-            });
+            }
+
+            range.addEventListener('input', update_preview);
+            range.addEventListener('change', update_preview);
         }
         //add dynamic preview handlers
         preview_frame('start');
@@ -110,8 +116,8 @@
             function update_range(inc)
             {
                 range.value = Math.max(Math.min(parseInt(range.value) + inc, range_max), range_min).toString();
-                //update number
-                output.value = range.value;
+                //dispatch change event
+                range.dispatchEvent(new Event('change'));
             }
 
             //set onclick handlers
