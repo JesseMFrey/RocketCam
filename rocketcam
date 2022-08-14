@@ -572,6 +572,8 @@ class FakeExposureSettingsHandler(tornado.web.RequestHandler):
             self.redirect(r'/gallery.html')
         else:
 
+            base_name = os.path.splitext(vid_url.split('/')[-1])[0]
+
             vid_path = os.path.join(img_dir, os.path.relpath(vid_url, '/'+img_url))
 
             if not os.path.exists(vid_path):
@@ -588,7 +590,19 @@ class FakeExposureSettingsHandler(tornado.web.RequestHandler):
             #get base image name (IMG_xx)
             vid_base = os.path.splitext(vid_url.split('/')[-1])[0]
 
-            self.render(r'fake-exposure-settings.html', src_url=vid_url, max_frames=vid_frames, start=start, end=end, fcount=fcount, base=vid_base)
+            #load settings to get framerate
+            set_name = base_name + '.cfg'
+            settings = CameraCfg.load_settings(set_name)
+
+            if settings:
+                fs = math.max(1, settings['camera']['framerate'])
+            else:
+                #no settings found, assume 30 fps
+                fs = 30
+
+            self.render(r'fake-exposure-settings.html', src_url=vid_url, max_frames=vid_frames,
+                        start=start, end=end, fcount=fcount, base=vid_base,
+                        frame_sec=fs)
 
 
 class FakeExposureRenderHandler(tornado.web.RequestHandler):

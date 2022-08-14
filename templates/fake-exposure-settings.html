@@ -18,21 +18,33 @@
                         <img id="start_frame" class="frame-preview" alt="start frame preview" src="/frame_preview?img={{ base }}&frame={{ start }}"/>
                         <p>
                         <label for="start">Start frame :</label>
-                        <input type="range" name="start" id="start" value="{{ start }}" max="{{ max_frames }}">
+                        <input type="range" name="start" id="start" value="{{ start }}" min="1" max="{{ max_frames }}" title="First video frame to use.">
                         <output for="start" id="start_num" style="width: 6em;font-family: monospace;">
+                        </p>
+                        <p>
+                        <button type="button" id="start_sec_dec">&lt;&lt;</button>
+                        <button type="button" id="start_frame_dec">&lt;</button>
+                        <button type="button" id="start_frame_inc">&gt;</button>
+                        <button type="button" id="start_sec_inc">&gt;&gt;</button>
                         </p>
                     </div>
                     <div class="frame-preview">
                         <img id="end_frame" class="frame-preview" alt="end frame preview" src="/frame_preview?img={{ base }}&frame={{ end }}"/>
                         <p>
                         <label for="end">End Frame :</label>
-                        <input type="range" name="end" id="end" value="{{ end }}" max="{{ max_frames }}">
+                        <input type="range" name="end" id="end" value="{{ end }}" min="1" max="{{ max_frames }}" title="Last video frame to use.">
                         <output for="end" id="end_num" style="width: 6em;font-family: monospace;">
+                        </p>
+                        <p>
+                        <button type="button" id="end_sec_dec">&lt;&lt;</button>
+                        <button type="button" id="end_frame_dec">&lt;</button>
+                        <button type="button" id="end_frame_inc">&gt;</button>
+                        <button type="button" id="end_sec_inc">&gt;&gt;</button>
                         </p>
                     </div>
                     <p>
                         <label for="fcount">Average number :</label>
-                        <input type="range" name="fcount" id="fcount" value="{{ fcount }}" min="1" max="40">
+                        <input type="range" name="fcount" id="fcount" value="{{ fcount }}" min="1" max="40" title="Number of frames to average together to get pixel values. Lower values are brighter, higher values reduce noise.">
                         <output for="fcount" id="fcount_num" style="width: 6em;font-family: monospace;">
                     </p>
                     <input type="submit" value="Render" title="Render Fake long exposure photo">
@@ -82,5 +94,36 @@
         //add dynamic preview handlers
         preview_frame('start');
         preview_frame('end');
+
+        function link_buttons(n)
+        {
+            var range     = document.getElementById(n);
+            var output    = document.getElementById(n + '_num');
+            var sec_dec   = document.getElementById(n + '_sec_dec');
+            var frame_dec = document.getElementById(n + '_frame_dec');
+            var frame_inc = document.getElementById(n + '_frame_inc');
+            var sec_inc   = document.getElementById(n + '_sec_inc');
+
+            range_max = parseInt(range.max);
+            range_min = parseInt(range.min);
+
+            function update_range(inc)
+            {
+                range.value = Math.max(Math.min(parseInt(range.value) + inc, range_max), range_min).toString();
+                //update number
+                output.value = range.value;
+            }
+
+            //set onclick handlers
+            sec_dec.onclick   = function() { update_range({{ -1* frame_sec }})};
+            frame_dec.onclick = function() { update_range( -1 )};
+            frame_inc.onclick = function() { update_range( 1 )};
+            sec_inc.onclick   = function() { update_range({{ frame_sec }})};
+
+        }
+
+        link_buttons('end');
+        link_buttons('start');
+
     </script>
 </body>
