@@ -16,13 +16,19 @@ img.fexp-gallery {
     max-width : 100%;
 }
 
-div.section{
+div.section {
     width : 90%;
     margin-left : 5%;
     margin-right : 5%;
     height : auto;
     margin-top : 4mm;
     margin-bottom : 4mm;
+    display: block;
+    float: left;
+}
+
+div.section:after {
+    clear: both;
 }
 
 output.setting {
