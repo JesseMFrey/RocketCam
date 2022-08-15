@@ -25,6 +25,12 @@ div.section{
     margin-bottom : 4mm;
 }
 
+output.setting {
+    width: 6em;
+    font-family: monospace;
+    display: inline-block;
+}
+
 div.fexp-gallery {
     float: left;
     display : block;

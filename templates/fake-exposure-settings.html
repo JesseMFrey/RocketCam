@@ -19,7 +19,7 @@
                         <p>
                         <label for="start">Start frame :</label>
                         <input type="range" name="start" id="start" value="{{ start }}" min="1" max="{{ max_frames }}" title="First video frame to use.">
-                        <output for="start" id="start_num" style="width: 6em;font-family: monospace;">
+                        <output for="start" id="start_num" class="setting">
                         </p>
                         <p>
                         <button type="button" id="start_sec_dec">&lt;&lt;</button>
@@ -33,7 +33,7 @@
                         <p>
                         <label for="end">End Frame :</label>
                         <input type="range" name="end" id="end" value="{{ end }}" min="1" max="{{ max_frames }}" title="Last video frame to use.">
-                        <output for="end" id="end_num" style="width: 6em;font-family: monospace;">
+                        <output for="end" id="end_num"  class="setting">
                         </p>
                         <p>
                         <button type="button" id="end_sec_dec">&lt;&lt;</button>
@@ -45,7 +45,7 @@
                     <p>
                         <label for="fcount">Average number :</label>
                         <input type="range" name="fcount" id="fcount" value="{{ fcount }}" min="1" max="40" title="Number of frames to average together to get pixel values. Lower values are brighter, higher values reduce noise.">
-                        <output for="fcount" id="fcount_num" style="width: 6em;font-family: monospace;">
+                        <output for="fcount" id="fcount_num"  class="setting">
                     </p>
                     <input type="submit" value="Render" title="Render Fake long exposure photo">
                 </form>
