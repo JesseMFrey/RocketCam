@@ -301,7 +301,13 @@ def get_long_exp_urls(num):
         url_p = '/long-exposure-disp.html?name=' + f
         #link to image
         url_i = img_url + f
-        urls.append((url_i,url_p))
+
+        #get parameters
+        p = lexp_params(f)
+
+        alt = f'Long exposure photo. Start frame {p["start"]}, end frame {p["end"]}, averaging frames {p["fcount"]}.'
+
+        urls.append((url_i, url_p, alt))
 
 
     return urls
