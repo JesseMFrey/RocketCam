@@ -78,6 +78,8 @@ div.fexp-gallery {
     color: white;
     padding: 10px;
     text-align: center;
+    margin: 0 auto;
+    display: block;
 }
 
 .preview {
@@ -113,6 +115,10 @@ div.fexp-gallery {
 
 .container:after {
     clear: both;
+}
+
+.container {
+    display: flex;
 }
 
 .description {
