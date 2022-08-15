@@ -52,7 +52,7 @@ div.fexp-gallery {
 }
 
 #content {
-    /*max-width : 5in;*/
+    max-width: 60em;
     background-color: #383838;
 }
 
