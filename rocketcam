@@ -705,7 +705,7 @@ class GalleryHandler(tornado.web.RequestHandler):
         #get list of image names
         img_lst = list(file_dict.keys())
         #sort list
-        img_lst.sort(key=img_num)
+        img_lst.sort(key=img_num, reverse=True)
 
         img_urls = []
         for img in img_lst:
