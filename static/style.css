@@ -16,7 +16,7 @@ img.fexp-gallery {
     max-width : 100%;
 }
 
-div.section {
+div.section, .footer {
     width : 90%;
     margin-left : 5%;
     margin-right : 5%;
@@ -25,6 +25,10 @@ div.section {
     margin-bottom : 4mm;
     display: block;
     float: left;
+}
+
+.footer > a {
+    margin: 0.5em;
 }
 
 div.section:after {
@@ -45,16 +49,6 @@ div.fexp-gallery {
     padding-left: 1em;
     padding-top: 2mm;
     padding-bottom: 2mm;
-}
-
-.footer {
-    width: 100%;
-    min-width: 100%;
-    float: none;
-    clear: both;
-    padding-top: 2mm;
-    padding-bottom: 2mm;
-    display: block;
 }
 
 #content {
