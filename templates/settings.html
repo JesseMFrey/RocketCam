@@ -12,19 +12,26 @@
     <div class="container">
         <div id="content" class="center">
             <div>
+                {% if error is not None %}
+                <div class="alert">
+                    <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+                    Error : {{ error }}
+                </div> 
+                {% end %}
+
                 <h1>Camera Controls</h1>
 
                 <form action="/settings.html" method="POST">
 		            <p>
                         <label for="video">Video </label>
                         <input type="radio" id="video" name="capture-type" value="video"
-                            {% if capture_type=="video" %}} 
+                            {% if capture_type=="video" %} 
                                 checked
                             {% end %}
                         >
                         <label for="still">Still </label>
                         <input type="radio" id="still" name="capture-type" value="still"
-                            {% if capture_type=="still" %}} 
+                            {% if capture_type=="still" %} 
                                 checked
                             {% end %}
                         >
