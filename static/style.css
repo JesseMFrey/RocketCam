@@ -221,6 +221,10 @@ img.frame-preview, img.preview {
   color: black;
 }
 
+video.preview {
+    width: 100%;
+}
+
 /* Use a media query to add a breakpoint at 800px: */
 @media screen and (max-width: 800px) {
   .left, .right {
@@ -232,9 +236,6 @@ img.frame-preview, img.preview {
   }
   .center {
     padding: 3px;
-  }
-  video {
-      max-width: 100%;
   }
 
   h1.file-name {
