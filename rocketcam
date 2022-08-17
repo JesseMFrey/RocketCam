@@ -820,11 +820,10 @@ class SettingsHandler(tornado.web.RequestHandler):
 
         #update settings
         #get capture type
-        self.cam.capture_type =  self.get_body_argument('capture-type')
+        cap_type =  self.get_body_argument('capture-type')
+
         #get ISO
         iso = int(self.get_body_argument('iso'))
-        #set ISO
-        self.cam.camera.iso = iso
 
         #get mode
         mode = int(self.get_body_argument('mode'))
@@ -833,31 +832,41 @@ class SettingsHandler(tornado.web.RequestHandler):
 
         #get AWB mode
         awb_mode = self.get_body_argument('awb_mode')
-        #set mode
-        self.cam.camera.awb_mode = awb_mode
 
         if self.cam.camera.awb_mode == 'off':
             #get AWB red gain
             awb_red = fractions.Fraction(self.get_body_argument('awb_red'))
             #get AWB blue gain
             awb_blue = fractions.Fraction(self.get_body_argument('awb_blue'))
-            #set AWB gain
-            self.cam.camera.awb_gains = (awb_red, awb_blue)
 
 
         #get shutter speed
-        shutter = float(self.get_body_argument('shutter'))
-        #set shutter speed
-        self.cam.camera.shutter_speed = int(shutter)
+        shutter = int(self.get_body_argument('shutter'))
 
         #get frame rate
         frame_r = float(self.get_body_argument('frame_r'))
         frame = fractions.Fraction(frame_r)
-        #set frame rate
-        self.cam.camera.framerate = frame
 
 
         try:
+            #set capture type
+            self.cam.capture_type = cap_type
+
+            #set ISO
+            self.cam.camera.iso = iso
+
+            #set mode
+            self.cam.camera.awb_mode = awb_mode
+
+            if self.cam.camera.awb_mode == 'off':
+                #set AWB gain
+                self.cam.camera.awb_gains = (awb_red, awb_blue)
+
+            #set frame rate
+            self.cam.camera.framerate = frame
+
+            #set shutter speed after frame rate
+            self.cam.camera.shutter_speed = shutter
 
             #check if we should take a picture
             if action == 'Capture':
