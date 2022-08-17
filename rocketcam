@@ -6,6 +6,7 @@ import configparser
 import cv2
 import datetime
 import fractions
+import functools
 import glob
 import json
 import logging
@@ -43,13 +44,22 @@ class CameraCfg:
         self.recording = False
         self.capture_type = 'video'
         self.rec_name = None
+        self.still_status = 'idle'
 
-    def take_picture(self, name):
+    async def take_picture(self, name):
         #get settings name
         set_name = os.path.splitext(name)[0] + '.cfg'
+        #set status
+        self.still_status = 'capturing'
+        #get current io loop
+        io_loop = tornado.ioloop.IOLoop.current()
         #capture picture
-        #TODO : add choice of format
-        self.camera.capture(name,format='jpeg')
+        try:
+            #TODO : add choice of format
+            await io_loop.run_in_executor(None,functools.partial(self.camera.capture,name,format='jpeg'))
+        finally:
+            #set status back to idle
+            self.still_status = 'idle'
         #save settings
         self.save_settings(set_name)
     
@@ -476,6 +486,8 @@ class StatusHandler(tornado.web.RequestHandler):
             info = self.renderer.status
 
             resp = json.dumps(info)
+        elif stat_type == 'still':
+            resp = json.dumps({'status': self.cam.still_status})
         else:
             raise ValueError(f'Unknown status type : "{stat_type}"')
 
@@ -793,6 +805,13 @@ class SettingsHandler(tornado.web.RequestHandler):
             self.redirect(r'/video.html')
             return
 
+        if self.cam.still_status != 'idle':
+            #render redirect page, will redirect back to settings when done
+            self.render('still_capturing.html',
+                        picture=None,
+                       )
+            return
+
         #get error message if there is one
         err_msg = self.get_argument('error', None)
 
@@ -814,7 +833,7 @@ class SettingsHandler(tornado.web.RequestHandler):
                         error=err_msg,
                    )
 
-    def post(self):
+    async def post(self):
         #get action
         action = self.get_body_argument('action')
 
@@ -853,6 +872,12 @@ class SettingsHandler(tornado.web.RequestHandler):
             frame = 1e6/(shutter)
 
         try:
+            if self.cam.recording:
+                raise RuntimeError('Video recoring in progress.')
+
+            if self.cam.still_status != 'idle':
+                raise RuntimeError('Still capture in progress.')
+
             #set capture type
             self.cam.capture_type = cap_type
 
@@ -879,8 +904,6 @@ class SettingsHandler(tornado.web.RequestHandler):
             if action == 'Capture':
                 #shutter speed
                 shutter_speed = self.cam.camera.shutter_speed*1e-6
-                #get redirect time
-                redir_time = math.ceil(shutter_speed)
                 if self.cam.capture_type == 'video':
                     #generate unique file name
                     pic_num = get_pic_num()
@@ -890,6 +913,8 @@ class SettingsHandler(tornado.web.RequestHandler):
                     #redirect to video capture page
                     self.redirect(r'/video.html')
                 elif self.cam.capture_type == 'still':
+                    #flag capture as started
+                    self.cam.still_status = 'starting'
                     #generate unique file name
                     pic_num = get_pic_num()
                     pic_name = num2name(pic_num)
@@ -898,12 +923,11 @@ class SettingsHandler(tornado.web.RequestHandler):
                         self.redirect(f'/image.html?img={pic_num}')
                     else:
                         #render redirect page
-                        self.render('redirect.html',
-                                    time=redir_time,
+                        self.render('still_capturing.html',
                                     picture=pic_num,
                                    )
                     # take a picture here...
-                    self.cam.take_picture(pic_name)
+                    await self.cam.take_picture(pic_name)
                 else:
                     raise RuntimeError(f'Unknown capture_type "{self.cam.capture_type}"')
             elif action == 'Save':

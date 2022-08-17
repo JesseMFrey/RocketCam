@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Waiting page while picture is taken">
+    <title>Taking Picture Please Wait</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+    <script src = "{{ static_url("jquery-3.6.0.min.js") }}"></script>
+</head>
+<body>
+    <div class="container">
+        <div id="content" class="center">
+            <h1>Still Capture</h1>
+            <p id="message">
+            </p>
+            <div id="spinner" class="loader"></div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        let text_element = document.getElementById("message");
+        let animation = document.getElementById("spinner");
+        //angle of loader
+        let angle = 0;
+        //time interval, in ms,  to query settings at
+        const set_time = 200;
+        //number of settings queries per second
+        const set_rate = 1000/set_time;
+        //time, in seconds, to take loader to go all the way around
+        const loader_time = 4;
+        //number of degrees to shift loader by each second
+        const spin_rate = 360.0/loader_time;
+        //number of degrees to add to loader each time a setting is recived
+        const spin_step =  spin_rate/set_rate;
+
+        function update_status()
+        {
+        $.getJSON("/status?type=still",function(data){
+            if(data.status == 'idle')
+            {
+                text_element.innerHTML = "Complete!";
+                {% if picture %}
+                    //picture captured, load image page
+                    window.location.assign("/image.html?img={{ picture }}");
+                {% else %}
+                    //picture captured, load image page
+                    window.location.assign("/settings.html");
+                {% end %}
+            }
+            else if(data.status == 'starting')
+            {
+                text_element.innerHTML = "Starting capture...";
+            }
+            else if(data.status == 'capturing')
+            {
+                text_element.innerHTML = "Capturing image. Please wait...";
+            }
+            else
+            {
+                console.log(`unknown status returned : "${data.status}"`)
+                return;
+            }
+            angle += spin_step;
+            rt =  `rotate(${angle}deg)`;
+            //spin animation to indicate loading
+            animation.style.transform = rt;
+        });
+        }
+        update_status();
+        setInterval(update_status , set_time);
+    </script>
+</body>
