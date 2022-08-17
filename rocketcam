@@ -827,8 +827,6 @@ class SettingsHandler(tornado.web.RequestHandler):
 
         #get mode
         mode = int(self.get_body_argument('mode'))
-        #set mode
-        self.cam.camera.sensor_mode = mode
 
         #get AWB mode
         awb_mode = self.get_body_argument('awb_mode')
@@ -860,6 +858,9 @@ class SettingsHandler(tornado.web.RequestHandler):
 
             #set ISO
             self.cam.camera.iso = iso
+
+            #set mode
+            self.cam.camera.sensor_mode = mode
 
             #set mode
             self.cam.camera.awb_mode = awb_mode
