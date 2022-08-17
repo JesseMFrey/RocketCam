@@ -71,7 +71,13 @@ class CameraCfg:
         #set recording name
         self.rec_name = name
         #start recording
-        self.camera.start_recording(name)
+        try:
+            self.camera.start_recording(name)
+        except:
+            #if there was an error, we are not recording
+            self.recording =  False
+            #re-raise the exception
+            raise
         #save settings
         self.save_settings(set_name)
         
