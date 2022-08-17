@@ -779,17 +779,21 @@ class VideoCapHandler(tornado.web.RequestHandler):
         action = self.get_body_argument('action')
 
         if action == 'stop':
+
             if self.cam.recording :
-                file_name = self.cam.stop_recording()
+                try:
+                    file_name = self.cam.stop_recording()
 
-                m = re.search(r'IMG_(?P<num>\d+)\.[A-Za-z0-9]+',file_name)
+                    m = re.search(r'IMG_(?P<num>\d+)\.[A-Za-z0-9]+',file_name)
 
-                if not m:
-                    raise RuntimeError(f'Unable to find image number in : "{file_name}"')
-                
-                file_num = m.group('num')
+                    if not m:
+                        raise RuntimeError(f'Unable to find image number in : "{file_name}"')
 
-                self.redirect(r'/vidpreview.html?vid=' + file_num)
+                    file_num = m.group('num')
+
+                    self.redirect(r'/vidpreview.html?vid=' + file_num)
+                except picamera.PiCameraNotRecording :
+                    self.redirect('/settings.hmel?error='+tornado.escape.url_escape('There was an error in recording'))
             else:
                 self.redirect(r'/gallery.html')
         else:
