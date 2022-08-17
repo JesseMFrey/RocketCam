@@ -847,6 +847,12 @@ class SettingsHandler(tornado.web.RequestHandler):
         frame_r = float(self.get_body_argument('frame_r'))
         frame = fractions.Fraction(frame_r)
 
+        #get frame rate adjustment checkbox
+        fr_adj = self.get_body_argument('rate_adjust')
+
+        if fr_adj == 'true' and frame >= 1e6/(shutter):
+            #set shutter speed
+            frame = 1e6/(shutter)
 
         try:
             #set capture type

@@ -66,8 +66,14 @@
                     </p>
                     <p>
                         <label for="frame_r">Frame rate : </label>
-                        <input type="number" name="frame_r" id="frame_r" value="{{frame_r}}" min="1" max="120">
+                        <input type="number" name="frame_r" id="frame_r" value="{{frame_r}}" min="0" max="120" step=any>
                         &sol;second
+                    </p>
+                    <p>
+                        <!-- default value for checkbox --!>
+                        <input type="hidden" name="rate_adjust" value="false"/>
+                        <label for="rate_adjust" title="If frame time is longer than exposure time, decrease frame rate.">Adjust frame rate for exposure</label>
+                        <input type="checkbox" id="rate_adjust" name="rate_adjust" value="true"/>
                     </p>
                     <p>
                         <label for="res">Image resolution : </label>
