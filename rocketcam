@@ -796,7 +796,7 @@ class SettingsHandler(tornado.web.RequestHandler):
         #get error message if there is one
         err_msg = self.get_argument('error', None)
 
-        frame_r = float(self.cam.camera.framerate)
+        frame_r = round(float(self.cam.camera.framerate), 5)
 
         #get shutter speed
         shutter = round(self.cam.camera.shutter_speed, 6)
