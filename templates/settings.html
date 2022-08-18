@@ -38,7 +38,12 @@
                     </p>
                     <p>
                         <label for="shutter">Shutter speed : </label>
-                        <input name="shutter" type="number" id="shutter" value="{{shutter}}" min="0" max="30e6" step="1"> &sol;1000000 seconds
+                        <input name="shutter" type="number" id="shutter" value="{{shutter}}" min="0" max="30e6" step="1">
+                        <select id="sh_units" name="shutter_units" title="Shutter speed units">
+                            <option value="1" selected=True>&sol;1000000 seconds</option>
+                            <option value="1000">&sol;1000 seconds</option>
+                            <option value="1000000">seconds</option>
+                        </select>
                     </p>
                     <p>
                         <label for="iso">ISO : </label>
@@ -67,7 +72,10 @@
                     <p>
                         <label for="frame_r">Frame rate : </label>
                         <input type="number" name="frame_r" id="frame_r" value="{{frame_r}}" min="0" max="120" step=any>
-                        &sol;second
+                        <select id="fr_units" name="frame_rate_units" title="Shutter speed units">
+                            <option value="fps" selected=True>frames&sol;second</option>
+                            <option value="spf">seconds&sol;frame</option>
+                        </select>
                     </p>
                     <p>
                         <!-- default value for checkbox --!>
@@ -109,5 +117,35 @@
             </div>
         </div>
     </div>
+    <script type="text/javascript">
+        //handle units for frame rate
+        let fr_units = document.getElementById("fr_units");
+        let fr = document.getElementById("frame_r");
+
+        fr_units.addEventListener('change', function (e){
+            //only two options so, just invert the value
+            fr.value = (1/parseFloat(fr.value)).toString();
+        });
+
+        //handle units for shutter speed
+        let sh_units = document.getElementById("sh_units");
+        let sh = document.getElementById("shutter");
+
+        let prevous = sh_units.value;
+
+        sh_units.addEventListener('change', function (e){
+
+            //scale to adjust values by
+            const scale = parseFloat(prevous)/parseFloat(sh_units.value);
+            //scale to new vlaue
+            sh.value = (parseFloat(sh.value) * scale).toString();
+            sh.min   = (parseFloat(sh.min)   * scale).toString();
+            sh.max   = (parseFloat(sh.max)   * scale).toString();
+            sh.step  = (parseFloat(sh.step)  * scale).toString();
+
+            //remember current value
+            prevous = sh_units.value;
+        });
+    </script>
 </body>
 

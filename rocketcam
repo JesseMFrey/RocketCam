@@ -867,12 +867,30 @@ class SettingsHandler(tornado.web.RequestHandler):
             awb_blue = fractions.Fraction(self.get_body_argument('awb_blue'))
 
 
+        #get shutter speed units
+        sh_units = int(self.get_body_argument('shutter_units'))
         #get shutter speed
-        shutter = int(self.get_body_argument('shutter'))
+        shutter_raw = float(self.get_body_argument('shutter'))
+        #compute value with with units
+        shutter = int(shutter_raw * sh_units)
 
+        #get frame rate units
+        fr_units = self.get_body_argument('frame_rate_units')
         #get frame rate
         frame_r = float(self.get_body_argument('frame_r'))
-        frame = fractions.Fraction(frame_r)
+        if fr_units == 'spf' :
+            #check for divide by zero
+            if frame_r == 0 :
+                #redirect back with error
+                self.redirect(r'/settings.html?error='+tornado.escape.url_escape('Invalid Frame rate'))
+                return
+
+            #create inverse fraction
+            frame_r = fractions.Fraction(1/frame_r)
+        elif fr_units == 'fps' :
+            frame = fractions.Fraction(frame_r)
+        else:
+            raise RuntimeError(f'Unknown frame rate units : "{fr_units}"')
 
         #get frame rate adjustment checkbox
         fr_adj = self.get_body_argument('rate_adjust')
