@@ -35,6 +35,10 @@ div.section:after {
     clear: both;
 }
 
+input[type="number"] {
+    width: 5em;
+}
+
 output.setting {
     width: 6em;
     font-family: monospace;
