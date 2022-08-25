@@ -35,8 +35,17 @@ div.section:after {
     clear: both;
 }
 
-input[type="number"] {
+input[type="number"].awb {
     width: 5em;
+}
+
+input[type="number"]#shutter {
+    width: 10em;
+}
+
+
+input[type="number"]#frame_r {
+    width: 6em;
 }
 
 output.setting {

@@ -109,10 +109,10 @@
                         </select>
                     </p>
                     <p>
-                        <label for="awb_red">AWB red : </label>
-                        <input type="number" name="awb_red" id="awb_red" value="{{ awb_gain[0] }}" min="0" step="1e-4">
-                        <label for="awb_blue">AWB blue : </label>
-                        <input type="number" name="awb_blue" id="awb_blue" value="{{ awb_gain[1] }}" min="0" step="1e-4">
+                        <label for="awb_red" class="awb">AWB red : </label>
+                        <input type="number" name="awb_red" class="awb" id="awb_red" value="{{ awb_gain[0] }}" min="0" step="1e-4">
+                        <label for="awb_blue" class="awb">AWB blue : </label>
+                        <input type="number" name="awb_blue" id="awb_blue" class="awb" value="{{ awb_gain[1] }}" min="0" step="1e-4">
                     </p>
                     <p>
                         <input type="submit" name="action" value="Capture" title="Take a picture with the saved settings">
