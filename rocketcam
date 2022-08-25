@@ -822,26 +822,40 @@ class SettingsHandler(tornado.web.RequestHandler):
                        )
             return
 
-        #get error message if there is one
-        err_msg = self.get_argument('error', None)
 
-        frame_r = round(float(self.cam.camera.framerate), 5)
+        #fill values that don't come from the camera and won't give errors
+        #fill the rest with dummy values
+        info = {
+                'capture_type' : self.cam.capture_type,
+                'iso'          : None,
+                'isos'         : iso_list,
+                'mode'         : None,
+                'shutter'      : None,
+                'resolution'   : None,
+                'frame_r'      : None,
+                'awb_mode'     : None,
+                'awb_gain'     : (None, None),
+                #get error message if there is one
+                'error'        : self.get_argument('error', None),
+                'read_err'     : None,
+                }
+        try:
+            #get settings from camera
+            info['frame_r'] = round(float(self.cam.camera.framerate), 5)
+            info['shutter'] = round(self.cam.camera.shutter_speed, 6)
+            info['iso'] = self.cam.camera.iso
+            info['mode'] = self.cam.camera.sensor_mode
+            info['resolution'] = self.cam.camera.resolution
+            info['awb_mode'] = self.cam.camera.awb_mode
 
-        #get shutter speed
-        shutter = round(self.cam.camera.shutter_speed, 6)
+            #get AWB gains
+            g = self.cam.camera.awb_gains
+            info['awb_gain'] = (round(float(g[0]), 4), round(float(g[1]), 4))
+        except (picamera.PiCameraValueError, RuntimeError) as e:
+            #there was an error reading settings
+            info['read_err'] = str(e)
 
-        self.render('settings.html',
-                        capture_type=self.cam.capture_type, 
-                        iso=self.cam.camera.iso,
-                        isos=iso_list,
-                        mode=self.cam.camera.sensor_mode,
-                        shutter=shutter,
-                        resolution=self.cam.camera.resolution,
-                        frame_r=frame_r,
-                        awb_mode=self.cam.camera.awb_mode,
-                        awb_gain=self.cam.camera.awb_gains,
-                        error=err_msg,
-                   )
+        self.render('settings.html',**info)
 
     async def post(self):
         #get action
