@@ -28,7 +28,7 @@
 
                 <h1>Camera Controls</h1>
 
-                <form action="/settings.html" method="POST" onsubmit="store_settings()">
+                <form id="set_form" action="/settings.html" method="POST" onsubmit="store_settings()">
 		            <p>
                         <label for="video">Video </label>
                         <input type="radio" id="video" name="capture-type" value="video"
@@ -153,6 +153,80 @@
             //remember current value
             prevous = sh_units.value;
         });
+
+        const max_places = 8;
+
+        function fix_number(ele)
+        {
+            //get step
+            let step = ele.step;
+            //if step is any, skip
+            //these elements won't give step errors
+            if(step == "any")
+            {
+                return ele.value;
+            }
+            //get values and convert to float
+            let stepf = parseFloat(step);
+            let min_val = parseFloat(ele.min);
+            let val = parseFloat(ele.value);
+            //calculate new value
+            let new_val_num = Math.round((val - min_val)/stepf) * stepf + min_val;
+            //convert to string
+            let new_val = new_val_num.toString();
+
+            //it's possible that we have a roundoff error here that will give
+            // errors, so we must account for this by removing unneeded digits
+            let dec_idx = ele.value.indexOf(".");
+            if(dec_idx == -1)
+            {
+                return new_val;
+            }
+            let places = new_val - dec_idx;
+
+            //check if there are too many places
+            if(places < max_places)
+            {
+                return new_val;
+            }
+
+            //loop back and find the first nonzero digit
+            for (let i = max_places; i > 0; i--)
+            {
+                if(new_val[dec_idx + i] != "0")
+                {
+                    //remove unneded digits
+                    return new_val.substring(0, dec_idx + i);
+                }
+            }
+            //return integer value
+            return new_val.substring(0, dec_idx -1);
+        }
+
+        //round a number input to the nearest valid value
+        function make_num_valid(e)
+        {
+            new_val = fix_number(e.target);
+            if(new_val != e.target.value)
+            {
+                e.target.value = new_val;
+            }
+        }
+
+        //get form
+        set_form = document.getElementById('set_form')
+        //find inputs in form
+        inputs = set_form.getElementsByTagName("input")
+
+        for (const ele of inputs)
+        {
+            if(ele.type == "number")
+            {
+                //add andler to number inputs
+                ele.addEventListener('change', make_num_valid);
+            }
+        }
+
 
         //save function for preferences stored in local storage
         //called when the form is submitted
