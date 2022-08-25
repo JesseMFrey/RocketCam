@@ -28,7 +28,7 @@
 
                 <h1>Camera Controls</h1>
 
-                <form action="/settings.html" method="POST">
+                <form action="/settings.html" method="POST" onsubmit="store_settings()">
 		            <p>
                         <label for="video">Video </label>
                         <input type="radio" id="video" name="capture-type" value="video"
@@ -153,6 +153,78 @@
             //remember current value
             prevous = sh_units.value;
         });
+
+        //save function for preferences stored in local storage
+        //called when the form is submitted
+        function store_settings()
+        {
+            //frame rate adjust checkbox
+            ra = document.getElementById('rate_adjust').checked;
+            localStorage.setItem('rate_adjust', ra);
+            //shutter speed units
+            sh_u = document.getElementById('sh_units').selectedIndex;
+            localStorage.setItem('sh_unit_idx',sh_u);
+            //frame rate units
+            fr_u = document.getElementById('fr_units').selectedIndex;
+            localStorage.setItem('fr_unit_idx',fr_u);
+        }
+
+        //get preferences stored in local storage
+
+        //get rate_adjust value and convert to Boolean
+        stored_rate_adjust = (localStorage.getItem('rate_adjust') === 'true');
+        if(stored_rate_adjust != null)
+        {
+            document.getElementById('rate_adjust').checked = stored_rate_adjust;
+        }
+
+        //dispatch a change event to an element
+        function change_evt(element)
+        {
+            //code from : https://stackoverflow.com/a/2856602
+            //requires checking what's available
+            if ("createEvent" in document)
+            {
+                var evt = document.createEvent("HTMLEvents");
+                evt.initEvent("change", false, true);
+                element.dispatchEvent(evt);
+            }
+            else
+            {
+                element.fireEvent("onchange");
+            }
+        }
+
+        //set shutter speed units from shared storage
+        stored_sh_unit_idx = localStorage.getItem('sh_unit_idx');
+
+        if(stored_sh_unit_idx != null)
+        {
+            sh_units = document.getElementById('sh_units');
+            sh_units.selectedIndex = stored_sh_unit_idx;
+            change_evt(sh_units);
+        }
+
+        //set frame rate units from shared storage
+        stored_fr_unit_idx = localStorage.getItem('fr_unit_idx');
+
+        if(stored_fr_unit_idx != null)
+        {
+            fr_units = document.getElementById('fr_units');
+            //get old value
+            old_units = fr_units.value;
+            //change units to saved value
+            fr_units.selectedIndex = stored_fr_unit_idx;
+            //get new value
+            new_units = fr_units.value;
+            //check if units changed
+            if( new_units != old_units )
+            {
+                //send changed event
+                change_evt(fr_units);
+            }
+        }
+
     </script>
 </body>
 
