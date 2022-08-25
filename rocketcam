@@ -900,7 +900,7 @@ class SettingsHandler(tornado.web.RequestHandler):
                 return
 
             #create inverse fraction
-            frame_r = fractions.Fraction(1/frame_r)
+            frame = fractions.Fraction(1/frame_r)
         elif fr_units == 'fps' :
             frame = fractions.Fraction(frame_r)
         else:
