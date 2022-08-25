@@ -48,6 +48,12 @@ input[type="number"]#frame_r {
     width: 6em;
 }
 
+/* red outline on invalid form inputs*/
+input:invalid {
+  border-color: red;
+  border-width: medium;
+}
+
 output.setting {
     width: 6em;
     font-family: monospace;
