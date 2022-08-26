@@ -804,6 +804,55 @@ class IndexHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('index.html')
 
+class AdminHandler(tornado.web.RequestHandler):
+    def initialize(self, secret, share_secret):
+        self.secret = secret
+        self.share_secret = share_secret
+
+    def mk_render_settings(self):
+        settings = {
+                    'error' : None,
+                   }
+        if self.share_secret:
+            settings['secret'] = self.secret
+        else:
+            settings['secret'] = None
+
+        return settings
+
+
+    def get(self):
+        settings = self.mk_render_settings()
+        self.render('admin.html', **settings)
+
+    def post(self):
+        #generate default render settings
+        render_set = self.mk_render_settings()
+        #get action
+        action = self.get_body_argument('action')
+        secret = self.get_body_argument('secret')
+
+        if secret != self.secret:
+            render_set['error'] = 'You are not authorized'
+            self.render('admin.html', **render_set)
+            return
+
+        if action in ('Shutdown', 'Reboot'):
+            cmd = {'Shutdown' : 'poweroff', 'Reboot' : 'reboot'}[action]
+            cp = subprocess.run(['sudo', '-n', '/usr/bin/systemctl', cmd],stdin=subprocess.DEVNULL)
+
+            if cp.returncode == 0:
+                self.render('admin.html', **render_set)
+            else:
+                render_set['error'] = f'Unable to run "/usr/bin/systemctl {cmd}" command.'
+                self.render('admin.html', **render_set)
+        elif action == 'Quit':
+            #exit application
+            sys.exit(0)
+        else:
+            render_set['error'] = f'invalid action "{action}".'
+            self.render('admin.html', **render_set)
+
 class SettingsHandler(tornado.web.RequestHandler):
     def initialize(self,cam):
         self.cam = cam
@@ -986,7 +1035,14 @@ class SettingsHandler(tornado.web.RequestHandler):
 
 
 class Application(tornado.web.Application):
-    def __init__(self, cam, renderer, *args, **kwargs):
+    def __init__(self, cam, renderer, allow_auth, *args, **kwargs):
+        #name of configuration file for server
+        config_name = os.path.join(os.path.dirname(__file__), 'rocketcam.cfg')
+
+        config = configparser.ConfigParser()
+
+        config.read(config_name)
+
         handlers = [(r"/index", IndexHandler),
                     (r"/index\.html", IndexHandler),
                     (r"/home\.html", IndexHandler),
@@ -1007,12 +1063,21 @@ class Application(tornado.web.Application):
                     (r"/", IndexHandler),
                     (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),
                 ]
+
+        #check if the admin section was found
+        if 'Admin' in config:
+            #check if we have a secret
+            if 'secret' in config['Admin']:
+                #add the admin handler
+                handlers.append((r"/admin", AdminHandler, {'secret' : config['Admin']['secret'], 'share_secret' : allow_auth}))
+
         super(Application, self).__init__(handlers, *args, **kwargs)
 
 def start_application():
     parser = argparse.ArgumentParser(description='Web application for camera control')
     parser.add_argument('-p','--port',default=8888,type=int,help='port to listen to')
     parser.add_argument('--debug',action='store_true',help='print additional debug info')
+    parser.add_argument('--allow-auth',action='store_true',help='Allow users to store admin secret')
 
     if not os.path.exists(img_dir):
         print(f'Creating image directory at {img_dir}')
@@ -1035,6 +1100,7 @@ def start_application():
                         template_path=os.path.join(os.path.dirname(__file__), 'templates'),
                         static_path=stat_dir,
                         debug = args.debug,
+                        allow_auth = args.allow_auth,
                      )
     app.listen(args.port)
     print(f'Starting server on port {args.port}')

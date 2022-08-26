@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Night Rocket Camera administration page">
+    <title>Night Rocket Camera - Administration</title>
+    <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+</head>
+<body>
+    <div class="container">
+        <div id="content" class="center">
+            <div>
+                {% if error is not None %}
+                <div class="alert">
+                    <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+                    Error : {{ error }}
+                </div>
+                {% end %}
+
+                <h1>System Administration</h1>
+
+                <form id="admin_form" action="/admin" method="POST">
+
+                    <input type="submit" name="action" value="Shutdown" title="Shutdown camera">
+                    <input type="submit" name="action" value="Reboot" title="Reboot camera">
+                    <input type="submit" name="action" value="Quit" title="Quit webserver, this may cause it to be restarted.">
+                    <input type="hidden" name="secret" id="secret" value="Invalid">
+                </form>
+                {% if secret %}
+                <p>
+                    <button onclick="localStorage.setItem('secret','{{ secret }}')" title="Allow this browser to perform admin actions.">Authorize</button>
+                </p>
+                {% end %}
+                <div class="footer">
+                    <a href="index.html">main page</a>
+                    <a href="settings.html">Camera Settings</a>
+                    <a href="gallery.html">Gallery</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        secret = localStorage.getItem('secret');
+        if(secret != null)
+        {
+            document.getElementById('secret').value = secret;
+        }
+    </script>
+</body>
+
