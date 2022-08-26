@@ -1,6 +1,9 @@
 
 pictures/
 
+#python cache
+__pycache__/
+
 #configuration files
 settings.cfg
 rocketcam.cfg

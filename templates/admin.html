@@ -6,6 +6,11 @@
     <meta name="description" content="Night Rocket Camera administration page">
     <title>Night Rocket Camera - Administration</title>
     <link rel="stylesheet" href="{{ static_url("style.css") }}" type="text/css">
+    {% import platform %}
+    {% import psutil %}
+    {% import rcmisc %}
+    {% import shutil %}
+    {% import tornado %}
 </head>
 <body>
     <div class="container">
@@ -20,6 +25,38 @@
 
                 <h1>System Administration</h1>
 
+                <h2>System Info</h2>
+                <div>
+                    <table class="data">
+                        <tr class="info"><td>Uptime</td><td>:</td><td> {{ rcmisc.get_uptime() }}</td><tr>
+                        <tr class="info"><td>System</td><td>:</td><td> {{platform.system()}}</td><tr>
+                        <tr class="info"><td>{{ platform.python_implementation() }} version</td><td>:</td><td>{{ platform.python_version() }}</td><tr>
+                        <tr class="info"><td>Tornado version</td><td>:</td><td> {{ tornado.version }}</td><tr>
+
+                        <tr>
+                            <td colspan="3" class="heading">
+                                <h2>Disk Info</h2>
+                            </td>
+                        </tr>
+                        {% set disk_info = shutil.disk_usage('/') %}
+                        <tr class="info"><td>Size</td><td>:</td><td>{{ rcmisc.human_readable_size(disk_info.total) }}</td></tr>
+                        <tr class="info"><td>Used</td><td>:</td><td>{{ rcmisc.human_readable_size(disk_info.used) }}</td></tr>
+
+                        <tr>
+                            <td colspan="3" class="heading">
+                                <h2>CPU Info</h2>
+                            </td>
+                        </tr>
+                        <tr class="info"><td>Machine</td><td>:</td><td> {{ platform.machine()}}</td></tr>
+                        {% set mem_info = psutil.virtual_memory() %}
+                        <tr class="info"><td>Total RAM </td><td>:</td><td>{{ rcmisc.human_readable_size(mem_info.total) }}</td></tr>
+                        <tr class="info"><td>Used RAM </td><td>: </td><td>{{ rcmisc.human_readable_size(mem_info.used) }}</td></tr>
+                        {% set freq_info = psutil.cpu_freq() %}
+                        <tr class="info"><td>CPU frequency </td><td>:</td><td>{{ rcmisc.human_readable_frequency(freq_info.current) }}</td></tr>
+                    </table>
+                </div>
+
+                <h2>Server Control</h2>
                 <form id="admin_form" action="/admin" method="POST">
 
                     <input type="submit" name="action" value="Shutdown" title="Shutdown camera">
