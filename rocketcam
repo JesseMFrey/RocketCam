@@ -923,11 +923,10 @@ class SettingsHandler(tornado.web.RequestHandler):
         #get AWB mode
         awb_mode = self.get_body_argument('awb_mode')
 
-        if self.cam.camera.awb_mode == 'off':
-            #get AWB red gain
-            awb_red = fractions.Fraction(self.get_body_argument('awb_red'))
-            #get AWB blue gain
-            awb_blue = fractions.Fraction(self.get_body_argument('awb_blue'))
+        #get AWB red gain
+        awb_red = fractions.Fraction(self.get_body_argument('awb_red'))
+        #get AWB blue gain
+        awb_blue = fractions.Fraction(self.get_body_argument('awb_blue'))
 
 
         #get shutter speed units
