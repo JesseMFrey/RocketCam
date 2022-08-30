@@ -1008,14 +1008,10 @@ class SettingsHandler(tornado.web.RequestHandler):
                     #generate unique file name
                     pic_num = get_pic_num()
                     pic_name = num2name(pic_num)
-                    if shutter_speed<1:
-                        #redirect to image page
-                        self.redirect(f'/image.html?img={pic_num}')
-                    else:
-                        #render redirect page
-                        self.render('still_capturing.html',
-                                    picture=pic_num,
-                                   )
+                    #render redirect page
+                    self.render('still_capturing.html',
+                                picture=pic_num,
+                               )
                     # take a picture here...
                     await self.cam.take_picture(pic_name)
                 else:
