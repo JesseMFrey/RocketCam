@@ -1038,24 +1038,21 @@ class Application(tornado.web.Application):
 
         config.read(config_name)
 
-        handlers = [(r"/index", IndexHandler),
-                    (r"/index\.html", IndexHandler),
-                    (r"/home\.html", IndexHandler),
-                    (r"/home", IndexHandler),
-                    (r"/settings\.html", SettingsHandler,{'cam':cam}),
-                    (r"/settings", SettingsHandler,{'cam':cam}),
-                    (r"/image.html", ImageDispHandler),
-                    (r"/video.html", VideoCapHandler,{'cam':cam}),
-                    (r"/vidpreview.html", VideoDispHandler),
-                    (r"/fake-exposure-settings.html", FakeExposureSettingsHandler),
-                    (r"/fake-exposure-settings", FakeExposureSettingsHandler),
-                    (r"/fake-exposure-render", FakeExposureRenderHandler, {'renderer':renderer}),
-                    (r"/fake-exposure-render.html", FakeExposureRenderHandler, {'renderer':renderer}),
-                    (r"/long-exposure-disp.html", LongExposureHandler ),
-                    (r"/gallery.html", GalleryHandler),
+        #regex for an optional html extension
+        opt_html = '(?:\.html)?$'
+
+        handlers = [(r"/(?:home|index)" + opt_html, IndexHandler),
+                    (r"/", IndexHandler),
+                    (r"/settings" + opt_html, SettingsHandler,{'cam':cam}),
+                    (r"/image" + opt_html, ImageDispHandler),
+                    (r"/video" + opt_html, VideoCapHandler,{'cam':cam}),
+                    (r"/vidpreview" + opt_html, VideoDispHandler),
+                    (r"/fake-exposure-settings" + opt_html, FakeExposureSettingsHandler),
+                    (r"/fake-exposure-render" + opt_html, FakeExposureRenderHandler, {'renderer':renderer}),
+                    (r"/long-exposure-disp" + opt_html, LongExposureHandler ),
+                    (r"/gallery" + opt_html, GalleryHandler),
                     (r"/frame_preview", FrameHandler),
                     (r"/status", StatusHandler,{'cam':cam, 'renderer':renderer}),
-                    (r"/", IndexHandler),
                     (r"/" + img_url + "(.*)", tornado.web.StaticFileHandler, {'path': img_dir}),
                 ]
 
@@ -1064,7 +1061,7 @@ class Application(tornado.web.Application):
             #check if we have a secret
             if 'secret' in config['Admin']:
                 #add the admin handler
-                handlers.append((r"/admin", AdminHandler, {'secret' : config['Admin']['secret'], 'share_secret' : allow_auth}))
+                handlers.append((r"/admin" + opt_html, AdminHandler, {'secret' : config['Admin']['secret'], 'share_secret' : allow_auth}))
 
         super(Application, self).__init__(handlers, *args, **kwargs)
 
