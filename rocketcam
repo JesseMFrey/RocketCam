@@ -383,7 +383,7 @@ async def frame_previews(fname, preview_sec = 1):
         fr =30
 
     # spacing between previews is preview_sec seconds, but minimum of every other frame
-    p_fr = max(2, fr * preview_sec)
+    p_fr = max(2, int(fr * preview_sec))
 
     # value not found, start dubprocess to calculate
     proc = await asyncio.subprocess.create_subprocess_exec(*framecount_args,
