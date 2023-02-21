@@ -4,4 +4,5 @@ Webserver code for raspberry pi camera to take rocket pictures, especially at ni
 ## Requirements
 
 * Tornado
-* Picamera:
+* Picamera
+* [fake-exposure](https://github.com/JesseMFrey/fake-exposure)
